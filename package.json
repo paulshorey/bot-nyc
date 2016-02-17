@@ -7,11 +7,12 @@
     "preinstall": "npm i -g gulp"
   },
   "dependencies": {
-    "util": "latest",
-    "path": "latest",
-    "tracer": "latest",
     "colors": "latest",
-    "q": "latest"
+    "path": "latest",
+    "q": "latest",
+    "tracer": "latest",
+    "underscore": "^1.8.3",
+    "util": "latest"
   },
   "devDependencies": {
     "jshint": "latest",
