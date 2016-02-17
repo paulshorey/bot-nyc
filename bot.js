@@ -38,17 +38,17 @@ var CASPER = require('casper').create({
 		"ignoreSslErrors": true
 	},
 	onWaitTimeout: function(timeout, step) {
-		this.log('onWaitTimeout\': "' + (this.site ? this.site.meta.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+		this.log('onWaitTimeout\': "' + (this.site ? this.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
 		this.clear();
 		this.page.stop();
 	},
 	onStepTimeout: function(timeout, step) {
-		this.log('onStepTimeout\': "' + (this.site ? this.site.meta.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+		this.log('onStepTimeout\': "' + (this.site ? this.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
 		this.clear();
 		this.page.stop();
 	},
 	onResourceReceived: function(timeout, step) {
-		//this.log( 'onResourceReceived\': "' + ( this.site ? this.site.meta.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
+		//this.log( 'onResourceReceived\': "' + ( this.site ? this.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 	},
 	clientScripts: [
 		APP.path + "/lib/jquery.js",
@@ -188,23 +188,20 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 		SITES.push(sites[s]);
 	}
 	CASPER.eachThen(SITES, function(response) {
-		this.site = {};
-		this.site.items = [];
-		this.site.meta = JSON.parse(FUN.stringify_once(response.data));
-		this.site.meta.link = this.site.meta.link;
+		this.site = JSON.parse(FUN.stringify_once(response.data));
 
 		// site
-		this.thenOpen(this.site.meta.link, function(headers) {
-			this.echo('meta.url');
+		this.thenOpen(this.site.link, function(headers) {
+			this.echo('site.link');
 
 			// site - eItem
-			CASPER.waitForSelector(this.site.meta.eItem, function(what) {
-				this.echo('site.eItem');
+			CASPER.waitForSelector(this.site.element.selector, function(what) {
+				this.echo('element.selector');
 				this.site.items = this.evaluate(function(site) {
 
 					var itemsindex = [];
 					var items = [];
-					$(site.meta.eItem).each(function() {
+					$(site.element.selector).each(function() {
 
 						///////////////////////////////////////////////////////////////////
 						// ITEM
