@@ -1,5 +1,3 @@
-console.log(phantom);
-
 var DT = new Date();
 var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
@@ -208,59 +206,91 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							///////////////////////////////////////////////////////////////////
 							// MANUAL
 							///////////////////////////////////////////////////////////////////
-							item.title = [];
-							item.date = [];
-							if (site.element.date) {
-								// do here, then skip automatic
+							if (site.element.title) {
+								item.title = [];
 							}
-							item.link = [];
+							if (site.element.date) {
+								item.date = [];
+								if (typeof site.element.date == 'string') {
+									site.element.date = [site.element.date];
+								}
+								if (site.element.date.reverse) {
+									for (var c in site.element.date) {
+										console.log('$(this)'+site.element.date[c]);
+										var elem = eval('$(this)'+site.element.date[c]);
+										if (elem) {
+											var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
+											console.log(date);
+											item.date.push(date);
+										}
+									}
+								}
+								console.log('***');
+							}
+							if (site.element.link) {
+								item.link = [];
+							}
 							
 							///////////////////////////////////////////////////////////////////
 							///////////////////////////////////////////////////////////////////
 							// AUTO
 							///////////////////////////////////////////////////////////////////
-							// stack (parse)
+							// stack-cards
 							var stack = {};
-							stack.title = [];
-							stack.date = [];
-							stack.link = [];
+							if (!item.title) {
+								stack.title = [];
+							}
+							if (!item.date) {
+								stack.date = [];
+							}
+							if (!item.link) {
+								stack.link = [];
+							}
 							$(this).find('*').reverse().each(function() {
-								// this is where the magic happens
 								pp.parseStack(site, stack, this);
 							});
 
 							///////////////////////////////////////////////////////////////////
-							// shuffle (sort)
+							// shuffle-cards
 							// title
-							stack.title = stack.title.reverse();
-							for (var card in stack.title) {
-								// compare current value, to all others
-								var matches = [];
-								for (var c in stack.title) {
-									// dont compare to self
-									if (card == c) {
-										continue;
+							if (!item.title) {
+								stack.title = stack.title.reverse();
+								for (var card in stack.title) {
+									// compare current value, to all others
+									var matches = [];
+									for (var c in stack.title) {
+										// dont compare to self
+										if (card == c) {
+											continue;
+										}
+										// current fits into others?
+										if (stack.title[c].value.indexOf(stack.title[card].value) != -1) {
+											matches.push(c);
+										}
 									}
-									// current fits into others?
-									if (stack.title[c].value.indexOf(stack.title[card].value) != -1) {
-										matches.push(c);
+									// only one match, means another value repeats this, so this has more value, other is duplicate
+									// if multiple, then this must be a parent level element, ignore this
+									if (matches.length == 1) {
+										delete stack.title[matches[0]];
+									} else if (matches.length >= 2) {
+										delete stack.title[card];
 									}
-								}
-								// only one match, means another value repeats this, so this has more value, other is duplicate
-								// if multiple, then this must be a parent level element, ignore this
-								if (matches.length == 1) {
-									delete stack.title[matches[0]];
-								} else if (matches.length >= 2) {
-									delete stack.title[card];
 								}
 							}
 							// date
-							stack.date = stack.date.reverse();
+							if (!item.date) {
+								stack.date = stack.date.reverse();
+							}
+							// link
+							if (!item.link) {
+								// as is
+							}
 
 							///////////////////////////////////////////////////////////////////
 							// add (automatic) if not yet made (manually
 							// title
 							if (!item.title) {
+								item.title = [];
 								for (var card in stack.title) {
 									if (stack.title[card].value) {
 										item.title.push(stack.title[card].value);
@@ -269,6 +299,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							}
 							// date
 							if (!item.date) {
+								item.date = [];
 								for (var card in stack.date) {
 									if (stack.date[card].value) {
 										item.date.push(stack.date[card].value);
@@ -277,6 +308,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							}
 							// link
 							if (!item.link) {
+								item.link = [];
 								for (var card in stack.link) {
 									var link = stack.link[card].value;
 									// perfect "http://domain.com/..."
