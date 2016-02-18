@@ -201,6 +201,7 @@ pp.parseImg = function(site,item,element) {
 			"src": $(element).attr('src'),
 			"width": $(element).width()||0
 		};
+		item.title = $(element).attr('title') || $(element).attr('alt') || 'Image';
 		item.link = item.img.src;
 	} else {
 		// child
@@ -250,16 +251,12 @@ pp.parseImg = function(site,item,element) {
 pp.parseStack = function(site,stack,element) {
 	var text = element.innerText.replace(/[\n\t\r]+/g,' ');
 	if (text.length <= 10) {
-		return false;
+		return true;
 	}
-	console.log('*****');
-	console.log(text);
-	console.log('*****');
 	
 	// link
-	if ( $(element).prop("tagName")=='a' ) {
-		//console.log('link',$(element).attr('href'));
-		stack.link.push({value:$(element).attr('href')});
+	if ( $(element).prop("tagName")=='A' && $(element).attr('href').length>12) {
+		stack.link.push({value:($(element).attr('href'))});
 		return true;
 	}
 	

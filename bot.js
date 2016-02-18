@@ -21,8 +21,8 @@ var APP = {
 var SITES = [];
 
 var CASPER = require('casper').create({
-	waitTimeout: 15000,
-	stepTimeout: 15000,
+	waitTimeout: 10000,
+	stepTimeout: 10000,
 	verbose: true,
 	logLevel: 'debug',
 	log_statuses: ['warning', 'error', 'info'],
@@ -218,42 +218,78 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 
 							///////////////////////////////////////////////////////////////////
 							// shuffle (filter)
+							// title
+							stack.title = stack.title.reverse();
 							for (var card in stack.title) {
-
 								// compare current value, to all others
-								card.matches = [];
+								var matches = [];
 								for (var c in stack.title) {
 									// dont compare to self
 									if (card == c) {
 										continue;
 									}
 									// current fits into others?
-									if (stack.title[c].value.indexOf(stack.title[card].value)) {
-										card.matches.push(c);
+									if (stack.title[c].value.indexOf(stack.title[card].value) != -1) {
+										matches.push(c);
 									}
 								}
 								// only one match, means another value repeats this, so this has more value, other is duplicate
 								// if multiple, then this must be a parent level element, ignore this
-								if (card.matches.length == 1) {
-									var c = card.matches[0];
-									delete stack.title[c];
-								} else if (card.matches.length > 2) {
+								if (matches.length == 1) {
+									delete stack.title[matches[0]];
+								} else if (matches.length >= 2) {
 									delete stack.title[card];
 								}
-
 							}
+							// date
+							stack.date = stack.date.reverse();
 
 							///////////////////////////////////////////////////////////////////
 							// play (interpret)
-							item.title = stack.title;
-							item.date = stack.date;
-							item.link = stack.link;
+							// title
+							item.title = [];
+							for (var card in stack.title) {
+								if (stack.title[card].value) {
+									item.title.push(stack.title[card].value);
+								}
+							}
+							// date
+							item.date = [];
+							for (var card in stack.date) {
+								if (stack.date[card].value) {
+									item.date.push(stack.date[card].value);
+								}
+							}
+							// link
+							item.link = [];
+							for (var card in stack.link) {
+								var link = stack.link[card].value;
+								// perfect "http://domain.com/..."
+								if (link.indexOf(site.host)==0) {
+									item.link.push(link);
+								}
+								// relative
+								if (/^\//.test(link)) {
+									// maybe
+									item.link.push(link);
+								} else if (link.length > 10 && !item.link) {
+									// last resort
+									item.link.push(link);
+								}
+							}
 
 							///////////////////////////////////////////////////////////////////
 							// next
-							console.log(JSON.stringify(item.title));
-							console.log(JSON.stringify(item.date));
-							console.log('*');
+							// console.log(JSON.stringify(item.title));
+							// console.log('*');
+							// console.log(JSON.stringify(item.date));
+							// console.log('*');
+							// console.log(JSON.stringify(stack.link));
+							// console.log('*');
+							// console.log(JSON.stringify(item.link));
+							// console.log('*');
+							// console.log('*');
+							// console.log('*');
 							items.push(item);
 
 						});
