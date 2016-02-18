@@ -211,25 +211,25 @@ pp.parseImg = function(site, item, element) {
 				"src": $(this).attr('src'),
 				"width": $(this).width() || 0
 			};
-			if (img.src && img.width > item.img.width) {
+			if (img.src && img.width >= 100 && img.width > item.img.width) {
 				item.img = img;
 			}
 		});
 		// background
-		if (!item.img.src || item.img.width < 100) {
+		if (!item.img.src) {
 			if ($(element).css('background-image')) {
 				img = {
 					"src": $(element).css('background-image'),
 					"width": $(element).width() || 0
 				};
 				img.src = (img.src.match(/(?:url\()([^\)]+)[\)]/) || [])[1];
-				if (img.src && img.width > item.img.width) {
+				if (img.src && img.width >= 100 && img.width > item.img.width) {
 					item.img = img;
 				}
 			}
 		}
 		// child background
-		if (!item.img.src || item.img.width < 100) {
+		if (!item.img.src) {
 			$(element).find('*').each(function() {
 				if ($(this).css('background-image')) {
 					img = {
@@ -237,7 +237,7 @@ pp.parseImg = function(site, item, element) {
 						"width": $(this).width() || 0
 					};
 					img.src = (img.src.match(/(?:url\()([^\)]+)[\)]/) || [])[1];
-					if (img.src && img.width > item.img.width) {
+					if (img.src && img.width >= 100 && img.width > item.img.width) {
 						item.img = img;
 					}
 				}
@@ -250,20 +250,23 @@ pp.parseImg = function(site, item, element) {
 };
 
 pp.parseStack = function(site, stack, element) {
-	var text = element.innerText.replace(/[\s]+/g, ' ');
+	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
+	var length = text.length;
 
 	// link
 	if (stack.link && element.tagName == 'A' && element.href && element.href.length > 12) {
-		var score = 0;
-		stack.link.push({
-			value: element.href,
-			score: score
-		});
-		return true;
+		var score = stack.i;
+		if (element.href.indexOf(site.link)!=-1) {
+			score += 100;
+		} else if (element.href.indexOf('/')===0) {
+			score += 50;
+		}
+		stack.link[score] = element.href;
+		return;
 	}
 
 	// date
-	if (stack.date && text.length > 10 && text.length < 50 && text.replace(/[0-9]/g, "").length >= 2) { // not too long // at least 2 numbers
+	if (stack.date && length > 10 && length < 50 && text.match(/[0-9]/g).length >= 2) { // not too long // at least 2 numbers
 		if (
 			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) ||
 			/[0-9][:]{1}[0-9]{2,}/.test(text) ||
@@ -271,36 +274,71 @@ pp.parseStack = function(site, stack, element) {
 			/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(text) ||
 			/(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
-			var score = 0;
-			stack.date.push({
-				value: text,
-				score: score
-			});
-			return true;
+			var score = stack.i;
+			stack.date[score] = text;
+			return;
 		}
 	}
 
 	// title
 	if (stack.title && text.length > 10) { // not too short // better than old title // not parent
-		var score = 0;
-		if (element.tagName == 'H1') {
-			score += 100;
+		var score = stack.i;
+		// social?
+		if (length < 80 && text.match(/(Twitter|Facebook|Google|Tumblr|Share|URL)/i)) {
+			return;
 		}
-		// switch (expression) {
-		// 	case n:
-		// 		code block
-		// 		break;
-		// 	case n:
-		// 		code block
-		// 		break;
-		// 	default:
-		// 	default code block
-		// }
-		stack.title.push({
-			value: text,
-			score: score
-		});
-		return true;
+		// title?
+		switch (element.tagName) {
+			case 'H1':
+				score += 100;
+				break;
+			case 'H2':
+				score += 90;
+				break;
+			case 'H3':
+				score += 80;
+				break;
+			case 'H4':
+				score += 70;
+				break;
+			case 'H5':
+				score += 60;
+				break;
+			case 'H6':
+				score += 50;
+				break;
+			case 'P':
+				score += 40;
+				break;
+			case 'BLOCKQUOTE':
+				score += 30;
+				break;
+		}
+		// UPPER case prefered
+		var upp = (text.substr(0,50).match(/[A-Z]/g)||'').length||0;
+		var low = (text.substr(0,100).match(/[^A-Z]/g)||'').length||0;
+		if (upp > low) {
+			var x = 10;
+			if (length > 10 && length < 50) {
+				x = 50 - length;
+			}
+			score += (upp - low) * x;
+		}
+		// shorter is better
+		if (length > 10 && length < 100) {
+			score += 100 - length;
+		}
+		// 40 perfect, 20-90 ok
+		if (length == 50) {
+			score += 100;
+		} else if (length > 20 && length < 40) {
+			score += (length-20)*5;
+		} else if (length > 40 && length < 90) {
+			score += (100 - ((length-40)*2));
+		}
+		
+		stack.title[score] = text;
+		return;
 	}
 
 };

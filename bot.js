@@ -2,13 +2,6 @@ var DT = new Date();
 var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
 
-// var pro = process = {};
-// pro.fs = FS;
-// pro.q = require('q');
-// pro.fun = require("./node_custom/fun.js");
-// pro.console = require("./node_custom/console.js").console;
-// pro.console.log('hello');
-
 var APP = {
 	"sites_server": 'http://localhost:8000/sites',
 	"path": '/www/bot.nyc',
@@ -206,27 +199,25 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							///////////////////////////////////////////////////////////////////
 							// MANUAL
 							///////////////////////////////////////////////////////////////////
+							// title
 							if (site.element.title) {
 								item.title = [];
 							}
+							// date
 							if (site.element.date) {
 								item.date = [];
 								if (typeof site.element.date == 'string') {
-									site.element.date = [site.element.date];
+									site.element.date = {"0":site.element.date};
 								}
-								if (site.element.date.reverse) {
-									for (var c in site.element.date) {
-										console.log('$(this)'+site.element.date[c]);
-										var elem = eval('$(this)'+site.element.date[c]);
-										if (elem) {
-											var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
-											console.log(date);
-											item.date.push(date);
-										}
+								for (var c in site.element.date) {
+									var elem = eval('$(this)'+site.element.date[c]);
+									if (elem) {
+										var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
+										item.date.push(date);
 									}
 								}
-								console.log('***');
 							}
+							// link
 							if (site.element.link) {
 								item.link = [];
 							}
@@ -235,7 +226,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							///////////////////////////////////////////////////////////////////
 							// AUTO
 							///////////////////////////////////////////////////////////////////
-							// stack-cards
+							// stack-cards (parse)
 							var stack = {};
 							if (!item.title) {
 								stack.title = [];
@@ -246,54 +237,51 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							if (!item.link) {
 								stack.link = [];
 							}
+							stack.i = 0;
 							$(this).find('*').reverse().each(function() {
 								pp.parseStack(site, stack, this);
+								stack.i++;
 							});
 
 							///////////////////////////////////////////////////////////////////
-							// shuffle-cards
+							// shuffle-cards (sort)
 							// title
 							if (!item.title) {
-								stack.title = stack.title.reverse();
 								for (var card in stack.title) {
-									// compare current value, to all others
+									// start from the lowest points (back of element)
+									// compare current value, to all others with higher points (front of element)
+									//console.log(card,stack.title[card]);
 									var matches = [];
 									for (var c in stack.title) {
-										// dont compare to self
-										if (card == c) {
-											continue;
+										// compare to everything higher than itself
+										if (parseInt(c) > parseInt(card)) {
+											// if current fits into anything higher, remove current
+											//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
+											if (stack.title[c].indexOf(stack.title[card]) != -1) {
+												delete stack.title[card];
+											}
 										}
-										// current fits into others?
-										if (stack.title[c].value.indexOf(stack.title[card].value) != -1) {
-											matches.push(c);
-										}
-									}
-									// only one match, means another value repeats this, so this has more value, other is duplicate
-									// if multiple, then this must be a parent level element, ignore this
-									if (matches.length == 1) {
-										delete stack.title[matches[0]];
-									} else if (matches.length >= 2) {
-										delete stack.title[card];
 									}
 								}
+								stack.title.reverse();
 							}
 							// date
 							if (!item.date) {
-								stack.date = stack.date.reverse();
+								stack.date.reverse();
 							}
 							// link
 							if (!item.link) {
-								// as is
+								stack.link.reverse();
 							}
 
 							///////////////////////////////////////////////////////////////////
-							// add (automatic) if not yet made (manually
+							// play-card (add to item)
 							// title
 							if (!item.title) {
 								item.title = [];
 								for (var card in stack.title) {
-									if (stack.title[card].value) {
-										item.title.push(stack.title[card].value);
+									if (stack.title[card]) {
+										item.title.push(stack.title[card]);
 									}
 								}
 							}
@@ -301,8 +289,8 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							if (!item.date) {
 								item.date = [];
 								for (var card in stack.date) {
-									if (stack.date[card].value) {
-										item.date.push(stack.date[card].value);
+									if (stack.date[card]) {
+										item.date.push(stack.date[card]);
 									}
 								}
 							}
@@ -310,7 +298,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							if (!item.link) {
 								item.link = [];
 								for (var card in stack.link) {
-									var link = stack.link[card].value;
+									var link = stack.link[card];
 									// perfect "http://domain.com/..."
 									if (link.indexOf(site.host)==0) {
 										item.link.push(link);
