@@ -221,7 +221,7 @@ pp.parseImg = function(site,item,element) {
 					"src": $(element).css('background-image'),
 					"width": $(element).width()||0
 				};
-				img.src = img.src.match(/(?:url\()([^\)]+)[\)]/)[1];
+				img.src = (img.src.match(/(?:url\()([^\)]+)[\)]/)||[])[1];
 				if (img.src && img.width > item.img.width) {
 					item.img = img;
 				}
@@ -235,7 +235,7 @@ pp.parseImg = function(site,item,element) {
 						"src": $(this).css('background-image'),
 						"width": $(this).width()||0
 					};
-					img.src = img.src.match(/(?:url\()([^\)]+)[\)]/)[1];
+					img.src = (img.src.match(/(?:url\()([^\)]+)[\)]/)||[])[1];
 					if (img.src && img.width > item.img.width) {
 						item.img = img;
 					}
@@ -249,19 +249,19 @@ pp.parseImg = function(site,item,element) {
 };
 
 pp.parseStack = function(site,stack,element) {
-	var text = element.innerText.replace(/[\n\t\r]+/g,' ');
+	var text = element.innerText.replace(/[\s]+/g,' ');
 	if (text.length <= 10) {
 		return true;
 	}
 	
 	// link
-	if ( $(element).prop("tagName")=='A' && $(element).attr('href').length>12) {
+	if (stack.link && $(element).is("a") && $(element).attr('href').length>12) {
 		stack.link.push({value:($(element).attr('href'))});
 		return true;
 	}
 	
 	// date
-	if (text.length < 50 && text.replace(/[0-9]/g,"").length >= 2) { // not too long // at least 2 numbers
+	if (stack.date &&text.length < 50 && text.replace(/[0-9]/g,"").length >= 2) { // not too long // at least 2 numbers
 		if (
 			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) || 
 			/[0-9][:]{1}[0-9]{2,}/.test(text) || 
@@ -276,7 +276,7 @@ pp.parseStack = function(site,stack,element) {
 	}
 	
 	// title
-	if (1==1) { // not too short // better than old title // not parent
+	if (stack.title) { // not too short // better than old title // not parent
 		//console.log('title',text);
 		stack.title.push({value:text});
 		return true;

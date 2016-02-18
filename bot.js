@@ -203,21 +203,34 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							var item = {};
 							item.img = {};
 							pp.parseImg(site, item, this);
-
+							
+							///////////////////////////////////////////////////////////////////
+							///////////////////////////////////////////////////////////////////
+							// MANUAL
+							///////////////////////////////////////////////////////////////////
+							item.title = [];
+							item.date = [];
+							if (site.element.date) {
+								// do here, then skip automatic
+							}
+							item.link = [];
+							
+							///////////////////////////////////////////////////////////////////
+							///////////////////////////////////////////////////////////////////
+							// AUTO
 							///////////////////////////////////////////////////////////////////
 							// stack (parse)
 							var stack = {};
 							stack.title = [];
 							stack.date = [];
 							stack.link = [];
-							stack.i = 0;
 							$(this).find('*').reverse().each(function() {
+								// this is where the magic happens
 								pp.parseStack(site, stack, this);
-								stack.i++;
 							});
 
 							///////////////////////////////////////////////////////////////////
-							// shuffle (filter)
+							// shuffle (sort)
 							// title
 							stack.title = stack.title.reverse();
 							for (var card in stack.title) {
@@ -245,51 +258,46 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							stack.date = stack.date.reverse();
 
 							///////////////////////////////////////////////////////////////////
-							// play (interpret)
+							// add (automatic) if not yet made (manually
 							// title
-							item.title = [];
-							for (var card in stack.title) {
-								if (stack.title[card].value) {
-									item.title.push(stack.title[card].value);
+							if (!item.title) {
+								for (var card in stack.title) {
+									if (stack.title[card].value) {
+										item.title.push(stack.title[card].value);
+									}
 								}
 							}
 							// date
-							item.date = [];
-							for (var card in stack.date) {
-								if (stack.date[card].value) {
-									item.date.push(stack.date[card].value);
+							if (!item.date) {
+								for (var card in stack.date) {
+									if (stack.date[card].value) {
+										item.date.push(stack.date[card].value);
+									}
 								}
 							}
 							// link
-							item.link = [];
-							for (var card in stack.link) {
-								var link = stack.link[card].value;
-								// perfect "http://domain.com/..."
-								if (link.indexOf(site.host)==0) {
-									item.link.push(link);
-								}
-								// relative
-								if (/^\//.test(link)) {
-									// maybe
-									item.link.push(link);
-								} else if (link.length > 10 && !item.link) {
-									// last resort
-									item.link.push(link);
+							if (!item.link) {
+								for (var card in stack.link) {
+									var link = stack.link[card].value;
+									// perfect "http://domain.com/..."
+									if (link.indexOf(site.host)==0) {
+										item.link.push(link);
+									}
+									// relative
+									if (/^\//.test(link)) {
+										// maybe
+										item.link.push(site.host+link);
+									} else if (link.length > 10 && !item.link) {
+										// last resort
+										item.link.push(site.host+'/'+link);
+									}
 								}
 							}
 
 							///////////////////////////////////////////////////////////////////
-							// next
-							// console.log(JSON.stringify(item.title));
-							// console.log('*');
-							// console.log(JSON.stringify(item.date));
-							// console.log('*');
-							// console.log(JSON.stringify(stack.link));
-							// console.log('*');
-							// console.log(JSON.stringify(item.link));
-							// console.log('*');
-							// console.log('*');
-							// console.log('*');
+							///////////////////////////////////////////////////////////////////
+							// DONE
+							///////////////////////////////////////////////////////////////////
 							items.push(item);
 
 						});
