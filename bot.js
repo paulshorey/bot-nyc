@@ -21,8 +21,8 @@ var APP = {
 var SITES = [];
 
 var CASPER = require('casper').create({
-	waitTimeout: 10000,
-	stepTimeout: 10000,
+	waitTimeout: 15000,
+	stepTimeout: 15000,
 	verbose: true,
 	logLevel: 'debug',
 	log_statuses: ['warning', 'error', 'info'],
@@ -51,9 +51,8 @@ var CASPER = require('casper').create({
 		//this.log( 'onResourceReceived\': "' + ( this.site ? this.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 	},
 	clientScripts: [
-		APP.path + "/lib/jquery.js",
-		APP.path + "/lib/underscore.js",
-		APP.path + "/lib/uu.js"
+		APP.path + "/remote_assets/vendor/all.js",
+		APP.path + "/remote_assets/custom/uu.js"
 	]
 });
 
@@ -69,8 +68,8 @@ CASPER.on('remote.message', function(msg) {
 	// 	this.log(JSON.stringify(msg.data, null, " "));
 	// }
 });
-CASPER.on("page.error", function(pageErr) {
-	this.log('REMOTE ERROR :: ' + JSON.stringify(pageErr, null, " "), 'error');
+CASPER.on("page.error", function(error, notes) {
+	this.log('Remote error: ' + JSON.stringify(error, null, " ") + '\n' + JSON.stringify(notes[0], null, " "), 'error');
 });
 CASPER.on('http.status.404', function(resource) {
 	this.log('404 error: ' + resource.url, 'error');
@@ -193,42 +192,71 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 
 		// site
 		this.thenOpen(this.site.link, function(headers) {
-			this.echo('site:'+this.site.link);
+			this.echo('site:' + this.site.link);
 
 			// element
 			CASPER.waitForSelector(this.site.element.selector, function(what) {
 				this.site.items = this.evaluate(function(site) {
 					var items = [];
 					if (site.element.selector) {
-					$(site.element.selector).each(function() {
-						var item = {};
+						$(site.element.selector).each(function() {
+							var item = {};
+							item.img = {};
+							pp.parseImg(site, item, this);
 
-						///////////////////////////////////////////////////////////////////
-						// item . img
-						item.img = {};
-						uu.parseImg(site,item,this);
-						
-						///////////////////////////////////////////////////////////////////
-						// item . link
-						item.link = '';
-						uu.parseSimple(site,item,this);
+							///////////////////////////////////////////////////////////////////
+							// stack (parse)
+							var stack = {};
+							stack.title = [];
+							stack.date = [];
+							stack.link = [];
+							stack.i = 0;
+							$(this).find('*').reverse().each(function() {
+								pp.parseStack(site, stack, this);
+								stack.i++;
+							});
 
-						///////////////////////////////////////////////////////////////////
-						// item . etc
-						item.title = '';
-						item.date = '';
-						$(this).find('*').reverse().each(function(){
-							uu.parseRecursive(site,item,this);
+							///////////////////////////////////////////////////////////////////
+							// shuffle (filter)
+							for (var card in stack.title) {
+
+								// compare current value, to all others
+								card.matches = [];
+								for (var c in stack.title) {
+									// dont compare to self
+									if (card == c) {
+										continue;
+									}
+									// current fits into others?
+									if (stack.title[c].value.indexOf(stack.title[card].value)) {
+										card.matches.push(c);
+									}
+								}
+								// only one match, means another value repeats this, so this has more value, other is duplicate
+								// if multiple, then this must be a parent level element, ignore this
+								if (card.matches.length == 1) {
+									var c = card.matches[0];
+									delete stack.title[c];
+								} else if (card.matches.length > 2) {
+									delete stack.title[card];
+								}
+
+							}
+
+							///////////////////////////////////////////////////////////////////
+							// play (interpret)
+							item.title = stack.title;
+							item.date = stack.date;
+							item.link = stack.link;
+
+							///////////////////////////////////////////////////////////////////
+							// next
+							console.log(JSON.stringify(item.title));
+							console.log(JSON.stringify(item.date));
+							console.log('*');
+							items.push(item);
+
 						});
-
-						///////////////////////////////////////////////////////////////////
-						// next
-						items.push(item);
-						console.log(item.title);
-						console.log(item.date);
-						console.log('*');
-
-					});
 					}
 					return items;
 
