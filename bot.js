@@ -32,7 +32,7 @@ var CASPER = require('casper').create({
 	},
 	pageSettings: {
 		"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
-		"loadImages": false,
+		"loadImages": true,
 		"loadPlugins": false,
 		"webSecurityEnabled": false,
 		"ignoreSslErrors": true
@@ -169,7 +169,7 @@ CASPER.hash = function(data, length) {
 
 
 ///////////////////////////////////////////////////////////////////
-// SITES
+// GET /sites
 ///////////////////////////////////////////////////////////////////
 CASPER.start();
 CASPER.thenOpen('http://localhost:8000/sites', {
@@ -180,9 +180,10 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 	}
 }, function(headers) {
 	var sites = JSON.parse(this.getPageContent());
-	this.echo('getted sites = ');
+	this.echo('sites:');
 	this.echo(FUN.stringify_once(sites));
 
+	// sites
 	var SITES = [];
 	for (var s in sites) {
 		SITES.push(sites[s]);
@@ -192,139 +193,50 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 
 		// site
 		this.thenOpen(this.site.link, function(headers) {
-			this.echo('site.link');
+			this.echo('site:'+this.site.link);
 
-			// site - eItem
+			// element
 			CASPER.waitForSelector(this.site.element.selector, function(what) {
-				this.echo('element.selector');
 				this.site.items = this.evaluate(function(site) {
-
-					var itemsindex = [];
 					var items = [];
+					if (site.element.selector) {
 					$(site.element.selector).each(function() {
-
-						///////////////////////////////////////////////////////////////////
-						// ITEM
 						var item = {};
 
 						///////////////////////////////////////////////////////////////////
-						// IMG
+						// item . img
 						item.img = {};
-						item.img.src = '';
-						item.img.width = 0;
-
-						// this is img
-						if ($(this).is('img')) {
-							// img (new) vs img (old)
-							img = {
-								"src": uu.val($(this).attr('src')),
-								"width": uu.val($(this).width())
-							};
-							if (img.src && img.width > item.img.width) {
-								// new is better
-								item.img = img;
-								// format
-								item.img.src = uu.parseUrl(item.img.src);
-							}
-						} else {
-							// child <img>s
-							$(this).find('img').each(function() {
-								// img (new) vs img (old)
-								img = {
-									"src": uu.val($(this).attr('src')),
-									"width": uu.val($(this).width())
-								};
-								if (img.src && img.width > item.img.width) {
-									// new is better
-									item.img = img;
-									// format
-									//item.img.src = uu.parseUrl(item.img.src);
-								}
-							});
-							// child background-images
-							if (!item.img.src || item.img.width < 50) {
-								$(this).find('*').each(function() {
-									// img (new) vs img (old)
-									img = {
-										"src": uu.val($(this).css('background-image')),
-										"width": uu.val($(this).width())
-									};
-									if (img.src && img.width > item.img.width) {
-										// new is better
-										item.img = img;
-										// format
-										item.img.src = uu.parseUrl(item.img.src);
-									}
-								});
-							}
-							// background-image
-							if (!item.img.src || item.img.width < 50) {
-								// img (new) vs img (old)
-								img = {
-									"src": uu.val($(this).css('background-image')),
-									"width": uu.val($(this).width())
-								};
-								if (img.src && img.width > item.img.width) {
-									// new is better
-									item.img = img;
-									// format
-									item.img.src = uu.parseUrl(item.img.src);
-								}
-							}
-						}
-						if (!item.img.src) {
-							item.img = {};
-						}
+						uu.parseImg(site,item,this);
+						
+						///////////////////////////////////////////////////////////////////
+						// item . link
+						item.link = '';
+						uu.parseSimple(site,item,this);
 
 						///////////////////////////////////////////////////////////////////
-						// body
-						text = uu.strip_tags($(this).html(), '<a>');
-						if (text) {
-							// ...
-							text_lines = text.split('\n');
-							// multiple lines
-							if (text_lines) {
-								item.body = '';
-								for (var line in text_lines) {
-									// ...
-									t = uu.trim(text_lines[line]);
-									t_len = t.length;
-									// title
-									if (t_len > 33) {
-										if (item.body === '' && t_len < 200) {
-											item.body += "<p>" + t + "</p>\n";
-										} else {
-											item.body += "<p>" + t + "</p>\n";
-										}
-									}
-								}
-								// one line
-							} else {
-								// ...
-								t = trim(text);
-								t_len = t.length;
-								// title
-								if (t_len > 33) {
-									item.body = "<p>" + t + "</p>\n";
-								}
-							}
-						}
+						// item . etc
+						item.title = '';
+						item.date = '';
+						$(this).find('*').reverse().each(function(){
+							uu.parseRecursive(site,item,this);
+						});
 
 						///////////////////////////////////////////////////////////////////
-						// save
-						if (item.body) {
-							item.url = uu.parseUrl(item.body);
-						}
+						// next
 						items.push(item);
+						console.log(item.title);
+						console.log(item.date);
+						console.log('*');
 
 					});
+					}
 					return items;
 
 				}, this.site);
 
 
 				///////////////////////////////////////////////////////////////
-				// SITE SAVE
+				// POST /site
 				if (this.site.items) {
 					var post = {};
 					post.site = this.site;
@@ -336,8 +248,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							'Content-type': 'application/json'
 						}
 					}, function(headers) {
-						this.echo('posted site = ');
-						this.echo(FUN.stringify_once(post));
+						this.echo('posted site');
 					});
 				}
 
