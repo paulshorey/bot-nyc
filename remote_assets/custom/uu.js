@@ -187,68 +187,6 @@ uu.consoleDoubleArray = function(_in) {
 // ok, now...
 var pp = new Object();
 
-pp.parseImg = function(site, item, element) {
-	item.img = {
-		src: '',
-		width: 0
-	};
-	var img = {
-		src: '',
-		width: 0
-	};
-	// this
-	if ($(element).is('img')) {
-		item.img = {
-			"src": $(element).attr('src'),
-			"width": $(element).width() || 0
-		};
-		item.title = $(element).attr('title') || $(element).attr('alt') || 'Image';
-		item.link = item.img.src;
-	} else {
-		// child
-		$(element).find('img').each(function() {
-			img = {
-				"src": $(this).attr('src'),
-				"width": $(this).width() || 0
-			};
-			if (img.src && img.width >= 100 && img.width > item.img.width) {
-				item.img = img;
-			}
-		});
-		// background
-		if (!item.img.src) {
-			if ($(element).css('background-image')) {
-				img = {
-					"src": $(element).css('background-image'),
-					"width": $(element).width() || 0
-				};
-				img.src = (img.src.match(/(?:url\()([^\)]+)[\)]/) || [])[1];
-				if (img.src && img.width >= 100 && img.width > item.img.width) {
-					item.img = img;
-				}
-			}
-		}
-		// child background
-		if (!item.img.src) {
-			$(element).find('*').each(function() {
-				if ($(this).css('background-image')) {
-					img = {
-						"src": $(this).css('background-image'),
-						"width": $(this).width() || 0
-					};
-					img.src = (img.src.match(/(?:url\()([^\)]+)[\)]/) || [])[1];
-					if (img.src && img.width >= 100 && img.width > item.img.width) {
-						item.img = img;
-					}
-				}
-			});
-		}
-	}
-	if (!item.img.src) {
-		item.img = {};
-	}
-};
-
 pp.parseStack = function(site, stack, element) {
 	var tag = element.tagName;
 	if (tag=='SCRIPT' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
@@ -258,7 +196,7 @@ pp.parseStack = function(site, stack, element) {
 	var length = text.length;
 
 	// img
-	if (stack.img && tag == 'IMG' && element.src && element.src.length > 12 && element.src.toLowerCase().indexOf('.jpg')!=-1) {
+	if (stack.img && tag=='IMG' && element.src && element.src.toLowerCase().indexOf('.jpg')!=-1) {
 		var score = stack.i*10;
 		score += $(element).width()||0;
 		if (!stack.x.img[element.src]) { // img must be unique per item

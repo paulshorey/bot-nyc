@@ -229,6 +229,11 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 								if (!item.img) {
 									stack.img = [];
 									stack.x.img = {};
+									var img = ($(this).html().match(/["']([^"]*.jpg)["']/i)||[])[1];
+									if (img) {
+										stack.img.push(img);
+										stack.x.img[img] = true;
+									}
 								}
 								stack.i = 0;
 								$(this).find('*').reverse().each(function() {
@@ -330,8 +335,10 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 								if (!item.img) {
 									item.img = [];
 									for (var card in stack.img) {
-										if (stack.img[card]) {
-											item.img.push(stack.img[card]);
+										var img = stack.img[card];
+										if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
+											img = site.host + img;
+											item.img.push(img);
 										}
 									}
 								}
