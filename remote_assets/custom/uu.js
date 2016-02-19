@@ -250,29 +250,61 @@ pp.parseImg = function(site, item, element) {
 };
 
 pp.parseStack = function(site, stack, element) {
-	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
+	var tag = element.tagName;
+	if (tag=='SCRIPT' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
+		return;
+	}
+	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '))+' ';
 	var length = text.length;
 
+	// img
+	if (stack.img && tag == 'IMG' && element.src && element.src.length > 12 && element.src.toLowerCase().indexOf('.jpg')!=-1) {
+		var score = stack.i*10;
+		score += $(element).width()||0;
+		if (!stack.x.img[element.src]) { // img must be unique per item
+			stack.x.img[element.src] = true;
+			stack.img[score] = element.src;
+		}
+		var text = $(element).attr('title') || $(element).attr('alt');
+		if (!text) { // see if it can be interpreted as date or title
+			return;
+		}
+	}
+	if (stack.img && $(element).css('background-image') && $(element).css('background-image').toLowerCase().indexOf('.jpg')!=-1) {
+		var src = ($(element).css('background-image').match(/(?:url\()([^\)]+)[\)]/)||[])[1];
+		if (src) {
+			var score = stack.i*10;
+			score += $(element).width()||0;
+			if (!stack.x.img[src]) { // img must be unique per item
+				stack.x.img[src] = true;
+				stack.img[score] = src;
+			}
+		}
+	}
+
 	// link
-	if (stack.link && element.tagName == 'A' && element.href && element.href.length > 12) {
-		var score = stack.i;
+	if (stack.link && tag == 'A' && element.href && element.href.length > 12) {
+		var score = stack.i*10;
 		if (element.href.indexOf(site.link)!=-1) {
 			score += 100;
 		} else if (element.href.indexOf('/')===0) {
 			score += 50;
 		}
 		stack.link[score] = element.href;
-		return;
+		if (text.indexOf(site.link)!=-1) { // if text contains link url, it is not a title
+			return;
+		}
 	}
 
 	// date
-	if (stack.date && length > 10 && length < 50 && text.match(/[0-9]/g).length >= 2) { // not too long // at least 2 numbers
+	if (stack.date && length > 8 && length < 44 && ( (text.match(/[0-9]/g)||'').length>=2 || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
 		if (
-			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) ||
+			/^(Now|Today|Next|Tomorrow)/i.test(text) || 
 			/[0-9][:]{1}[0-9]{2,}/.test(text) ||
+			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) ||
 			/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(text) ||
 			/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(text) ||
-			/(January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
+			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
 			var score = stack.i;
 			stack.date[score] = text;
@@ -281,14 +313,14 @@ pp.parseStack = function(site, stack, element) {
 	}
 
 	// title
-	if (stack.title && text.length > 10) { // not too short // better than old title // not parent
-		var score = stack.i;
+	if (stack.title && text.length > 10) {
+		var score = stack.i*10;
 		// social?
 		if (length < 80 && text.match(/(Twitter|Facebook|Google|Tumblr|Share|URL)/i)) {
 			return;
 		}
 		// title?
-		switch (element.tagName) {
+		switch (tag) {
 			case 'H1':
 				score += 100;
 				break;
@@ -342,3 +374,40 @@ pp.parseStack = function(site, stack, element) {
 	}
 
 };
+
+
+
+pp.doOnce = function(){
+	if (pp.doneOnce) {
+		return false;
+	}
+	window.pp.doneOnce = true;
+	
+	console.log('***');
+	console.log('uu.js ... '+window.location.href);
+	console.log('***');
+	
+	window.console.log('start... scroll =  '+window.document.body.scrollTop);
+	var hash = window.location.hash.substr(1);
+	if (hash) {
+		if ($('a[name="'+hash+'"]').length) {
+			window.document.body.scrollTop = $('a[name="'+hash+'"]').offset().top;
+		} else if ($('#'+hash).length) {
+			window.document.body.scrollTop = $('#'+hash).offset().top;
+		}
+	}
+	
+};
+pp.doOnce();
+
+pp.doAlways = function(){
+	window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
+	console.log('scrolled: '+window.document.body.scrollTop);
+};
+
+
+
+
+
+
+

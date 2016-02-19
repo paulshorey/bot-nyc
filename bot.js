@@ -13,13 +13,14 @@ var SITES = [];
 
 var CASPER = require('casper').create({
 	waitTimeout: 10000,
-	stepTimeout: 10000,
+	stepTimeout: 33000,
+	retryTimeout: 1000,
 	verbose: true,
 	logLevel: 'debug',
 	log_statuses: ['warning', 'error', 'info'],
 	viewportSize: {
-		width: 2000,
-		height: 2000
+		width: 1440,
+		height: 900
 	},
 	pageSettings: {
 		"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
@@ -128,34 +129,6 @@ CASPER.str = Object({
 		return (strlen < 2 ? "0" + str : str);
 	}
 });
-CASPER.hash = function(data, length) {
-	if (typeof(data) == "string" && typeof(length) == "number") {
-		var hash = 0;
-		var i = 0;
-
-		if (length > data.length || length === 0) {
-			length = data.length;
-		}
-
-		for (i; i < length; i++) {
-			hash = hash + data.charCodeAt(i);
-			hash = hash + (hash << 10);
-			hash = hash ^ (hash >> 6);
-		}
-
-		hash = hash + (hash << 3);
-		hash = hash ^ (hash >> 11);
-		hash = hash + (hash << 15);
-
-		if (hash < 0) {
-			hash = hash * -1;
-		}
-
-		return hash.toString(16);
-	} else {
-		throw "Inputted data must be string and inputted length must be number. Given: data: " + data + ", length: " + length;
-	}
-};
 
 
 ///////////////////////////////////////////////////////////////////
@@ -181,154 +154,223 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 	CASPER.eachThen(SITES, function(response) {
 		this.site = JSON.parse(FUN.stringify_once(response.data));
 
-		// site
+		///////////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////
+		// HAUNT
 		this.thenOpen(this.site.link, function(headers) {
-			this.echo('site:' + this.site.link);
-
-			// element
-			CASPER.waitForSelector(this.site.element.selector, function(what) {
-				this.site.items = this.evaluate(function(site) {
-					var items = [];
-					if (site.element.selector) {
-						$(site.element.selector).each(function() {
-							var item = {};
-							item.img = {};
-							pp.parseImg(site, item, this);
-							
-							///////////////////////////////////////////////////////////////////
-							///////////////////////////////////////////////////////////////////
-							// MANUAL
-							///////////////////////////////////////////////////////////////////
-							// title
-							if (site.element.title) {
-								item.title = [];
+			this.waitFor(function() {
+				return this.site.items = this.evaluate(function(site) {
+						
+						// inside
+						var items = [];
+						if (site.element.selector && !window.haunting) {
+							// play safe
+							console.log('ready '+site.element.selector);
+							window.haunting = true;
+							window.setTimeout(function(){
+								window.haunting = false;
+								window.waitFive = true;
+							},5000);
+							// try again in 5 seconds after everything loaded
+							if (!window.waitFive) {
+								return false;
 							}
-							// date
-							if (site.element.date) {
-								item.date = [];
-								if (typeof site.element.date == 'string') {
-									site.element.date = {"0":site.element.date};
+							// ok go
+							$(site.element.selector).each(function() {
+								console.log('each! '+$(this).text());
+								var item = {score:100};
+								
+								///////////////////////////////////////////////////////////////////
+								///////////////////////////////////////////////////////////////////
+								// MANUAL
+								///////////////////////////////////////////////////////////////////
+								// img // better to get automatically
+								// title
+								if (site.element.title) {
+									item.title = [];
 								}
-								for (var c in site.element.date) {
-									var elem = eval('$(this)'+site.element.date[c]);
-									if (elem) {
-										var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
-										item.date.push(date);
+								// date
+								if (site.element.date) {
+									item.date = [];
+									if (typeof site.element.date == 'string') {
+										site.element.date = {"0":site.element.date};
 									}
-								}
-							}
-							// link
-							if (site.element.link) {
-								item.link = [];
-							}
-							
-							///////////////////////////////////////////////////////////////////
-							///////////////////////////////////////////////////////////////////
-							// AUTO
-							///////////////////////////////////////////////////////////////////
-							// stack-cards (parse)
-							var stack = {};
-							if (!item.title) {
-								stack.title = [];
-							}
-							if (!item.date) {
-								stack.date = [];
-							}
-							if (!item.link) {
-								stack.link = [];
-							}
-							stack.i = 0;
-							$(this).find('*').reverse().each(function() {
-								pp.parseStack(site, stack, this);
-								stack.i++;
-							});
-
-							///////////////////////////////////////////////////////////////////
-							// shuffle-cards (sort)
-							// title
-							if (!item.title) {
-								for (var card in stack.title) {
-									// start from the lowest points (back of element)
-									// compare current value, to all others with higher points (front of element)
-									//console.log(card,stack.title[card]);
-									var matches = [];
-									for (var c in stack.title) {
-										// compare to everything higher than itself
-										if (parseInt(c) > parseInt(card)) {
-											// if current fits into anything higher, remove current
-											//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
-											if (stack.title[c].indexOf(stack.title[card]) != -1) {
-												delete stack.title[card];
-											}
+									for (var c in site.element.date) {
+										var elem = eval('$(this)'+site.element.date[c]);
+										if (elem) {
+											var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
+											item.date.push(date);
 										}
 									}
 								}
-								stack.title.reverse();
-							}
-							// date
-							if (!item.date) {
-								stack.date.reverse();
-							}
-							// link
-							if (!item.link) {
-								stack.link.reverse();
-							}
+								// link
+								if (site.element.link) {
+									item.link = [];
+								}
+								
+								///////////////////////////////////////////////////////////////////
+								///////////////////////////////////////////////////////////////////
+								// AUTO
+								///////////////////////////////////////////////////////////////////
+								// stack-cards (parse)
+								var stack = {x:{}};
+								if (!item.title) {
+									stack.title = [];
+									stack.x.title = {};
+								}
+								if (!item.date) {
+									stack.date = [];
+									stack.x.date = {};
+								}
+								if (!item.link) {
+									stack.link = [];
+									stack.x.link = {};
+								}
+								if (!item.img) {
+									stack.img = [];
+									stack.x.img = {};
+								}
+								stack.i = 0;
+								$(this).find('*').reverse().each(function() {
+									pp.parseStack(site, stack, this);
+									stack.i++;
+								});
 
-							///////////////////////////////////////////////////////////////////
-							// play-card (add to item)
-							// title
-							if (!item.title) {
-								item.title = [];
-								for (var card in stack.title) {
-									if (stack.title[card]) {
-										item.title.push(stack.title[card]);
+								///////////////////////////////////////////////////////////////////
+								// shuffle-cards (sort)
+								// title
+								if (!item.title) {
+									for (var card in stack.title) {
+										// start from the lowest points (back of element)
+										// compare current value, to all others with higher points (front of element)
+										//console.log(card,stack.title[card]);
+										var matches = [];
+										for (var c in stack.title) {
+											// compare to everything higher than itself
+											if (parseInt(c) > parseInt(card)) {
+												// if current fits into anything higher, remove current
+												//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
+												if (stack.title[c].indexOf(stack.title[card]) != -1) {
+													delete stack.title[card];
+												}
+											}
+										}
+									}
+									stack.title.reverse();
+								}
+								// date
+								if (!item.date) {
+									for (var card in stack.date) {
+										// start from the lowest points (back of element)
+										// compare current value, to all others with higher points (front of element)
+										//console.log(card,stack.title[card]);
+										var matches = [];
+										for (var c in stack.date) {
+											// compare to everything higher than itself
+											if (parseInt(c) > parseInt(card)) {
+												// if current fits into anything higher, remove current
+												//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
+												if (stack.date[c].indexOf(stack.date[card]) != -1) {
+													delete stack.date[card];
+												}
+											}
+										}
+									}
+									stack.title.reverse();
+								}
+								// link
+								if (!item.link) {
+									stack.link.reverse();
+								}
+								// img
+								if (!item.img) {
+									stack.img.reverse();
+								}
+
+								///////////////////////////////////////////////////////////////////
+								// play-card (add to item)
+								// title
+								if (!item.title) {
+									item.title = [];
+									for (var card in stack.title) {
+										if (stack.title[card]) {
+											item.title.push(stack.title[card]);
+										}
 									}
 								}
-							}
-							// date
-							if (!item.date) {
-								item.date = [];
-								for (var card in stack.date) {
-									if (stack.date[card]) {
-										item.date.push(stack.date[card]);
+								// date
+								if (!item.date) {
+									item.date = [];
+									for (var card in stack.date) {
+										if (stack.date[card]) {
+											item.date.push(stack.date[card]);
+										}
 									}
 								}
-							}
-							// link
-							if (!item.link) {
-								item.link = [];
-								for (var card in stack.link) {
-									var link = stack.link[card];
-									// perfect "http://domain.com/..."
-									if (link.indexOf(site.host)==0) {
-										item.link.push(link);
-									}
-									// relative
-									if (/^\//.test(link)) {
-										// maybe
-										item.link.push(site.host+link);
-									} else if (link.length > 10 && !item.link) {
-										// last resort
-										item.link.push(site.host+'/'+link);
+								// link
+								if (!item.link) {
+									item.link = [];
+									for (var card in stack.link) {
+										var link = stack.link[card];
+										// perfect "http://domain.com/..."
+										if (link.indexOf(site.host)==0) {
+											item.link.push(link);
+										}
+										// relative
+										if (/^\//.test(link)) {
+											// maybe
+											item.link.push(site.host+link);
+										} else if (link.length > 10 && !item.link) {
+											// last resort
+											item.link.push(site.host+'/'+link);
+										}
 									}
 								}
-							}
+								// img
+								if (!item.img) {
+									item.img = [];
+									for (var card in stack.img) {
+										if (stack.img[card]) {
+											item.img.push(stack.img[card]);
+										}
+									}
+								}
 
-							///////////////////////////////////////////////////////////////////
-							///////////////////////////////////////////////////////////////////
-							// DONE
-							///////////////////////////////////////////////////////////////////
-							items.push(item);
+								///////////////////////////////////////////////////////////////////
+								///////////////////////////////////////////////////////////////////
+								// SCORE
+								if (!item.title[0]) {
+									return true;
+								}
+								if (!item.link[0] || item.link.length>3) {
+									item.score -= 1;
+								}
+								if (!item.img[0]) {
+									item.score -= 1;
+								}
+								if (item.date[0]) {
+									item.score += 1;
+								}
+								if (item.score < 100) { // discard if missing both image and link
+									return true;
+								}
 
-						});
-					}
-					return items;
-
-				}, this.site);
-
-
-				///////////////////////////////////////////////////////////////
-				// POST /site
+								///////////////////////////////////////////////////////////////////
+								///////////////////////////////////////////////////////////////////
+								// DONE
+								items.push(item);
+								
+							});
+						}
+						//console.log('ok! '+JSON.stringify(items));
+						return items.length ? items : false;
+						
+				},this.site);
+			}, function(data) {
+				///////////////////////////////////////////////////////////////////
+				///////////////////////////////////////////////////////////////////
+				// SUCCESS
+				this.echo('Found '+(this.site.items.length||0)+' items');
 				if (this.site.items) {
 					var post = {};
 					post.site = this.site;
@@ -340,12 +382,21 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 							'Content-type': 'application/json'
 						}
 					}, function(headers) {
-						this.echo('posted site');
+						this.echo('POSTED to /site');
 					});
 				}
-
-			});
-
+				
+			}, function(data) {
+				///////////////////////////////////////////////////////////////////
+				///////////////////////////////////////////////////////////////////
+				// FAIL
+				// send error report
+				this.echo('Site failed');
+			   this.echo(JSON.stringify(data));
+			   this.echo(JSON.stringify(this.site.items));
+			}, 
+			30000 );
+		
 		});
 
 	});
