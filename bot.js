@@ -136,11 +136,7 @@ CASPER.str = Object({
 ///////////////////////////////////////////////////////////////////
 CASPER.start();
 CASPER.thenOpen('http://localhost:8000/sites', {
-	method: 'post',
-	data: JSON.stringify({}, null, '\t'),
-	headers: {
-		'Content-type': 'application/json'
-	}
+	method: 'get'
 }, function(headers) {
 	var sites = JSON.parse(this.getPageContent());
 	this.echo('sites:');
