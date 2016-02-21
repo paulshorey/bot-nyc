@@ -3,7 +3,7 @@ var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
 
 var APP = {
-	"sites_server": 'http://localhost:8000/sites',
+	"sites_server": 'http://159.203.70.25',
 	"path": '/www/bot.nyc',
 	"path_in": '',
 	"path_out": ''
@@ -135,7 +135,7 @@ CASPER.str = Object({
 // GET /sites
 ///////////////////////////////////////////////////////////////////
 CASPER.start();
-CASPER.thenOpen('http://localhost:8000/sites', {
+CASPER.thenOpen(APP.sites_server+'/sites', {
 	method: 'get'
 }, function(headers) {
 	var sites = JSON.parse(this.getPageContent());
@@ -313,7 +313,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 									item.link = [];
 									for (var card in stack.link) {
 										var link = stack.link[card];
-										// perfect "http://domain.com/..."
+										// absolute
 										if (link.indexOf(site.host)==0) {
 											item.link.push(link);
 										}
@@ -378,7 +378,7 @@ CASPER.thenOpen('http://localhost:8000/sites', {
 					var post = {};
 					post.site = this.site;
 					// post
-					CASPER.thenOpen('http://localhost:8000/site', {
+					CASPER.thenOpen(APP.sites_server+'/site', {
 						method: 'post',
 						data: JSON.stringify(post, null, '\t'),
 						headers: {
