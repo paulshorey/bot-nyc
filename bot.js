@@ -3,7 +3,7 @@ var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
 
 var APP = {
-	"sites_server": 'http://159.203.70.25',
+	"sites_server": 'http://api.allevents.nyc',
 	"path": '/www/bot.nyc',
 	"path_in": '',
 	"path_out": ''
