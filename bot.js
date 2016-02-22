@@ -159,7 +159,7 @@ CASPER.str = Object({
 		return (strlen < 2 ? "0" + str : str);
 	}
 });
-CASPER.log( 'Logged: '+ DT.getFullYear() + '.' + CASPER.str.pad(DT.getMonth()+1) + '.' + CASPER.str.pad(DT.getDate() + ' ' + CASPER.str.pad(DT.getHours()) + ':' + CASPER.str.pad(DT.getMinutes()) + ':' + CASPER.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
+CASPER.log( 'Logged: '+ DT.getFullYear() + '.' + CASPER.str.pad(DT.getMonth()+1) + '.' + CASPER.str.pad(DT.getDate()) + ' ' + CASPER.str.pad(DT.getHours()) + ':' + CASPER.str.pad(DT.getMinutes()) + ':' + CASPER.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() , 'info');
 
 
 ///////////////////////////////////////////////////////////////////
