@@ -1,2 +1,2 @@
-rm -rf logs
-http-server logs -p 8000 -d false -s -c 540
+rm -rf console
+http-server console -p 8000 -d false -s -c 30
