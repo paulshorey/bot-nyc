@@ -135,7 +135,7 @@ CASPER.log = function(message, status) {
 	}
 	this.logHTML = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + this.logHTML;
 	FS.write(
-		'public/console/logs/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + '.html', // + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		'public/console/logs/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()+1) + '.' + this.str.pad(DT.getDate()) + '.html', // + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
 		this.logHTML,
 		'w'
 	);
@@ -150,16 +150,6 @@ CASPER.log = function(message, status) {
 		message = '[DEBUG]       ' + message;
 	}
 	this.echo(message, status.toUpperCase());
-		// all
-		// var filename = '/all';
-		// var message = message + '\n' + FS.read(CONSOLE.path.all, message, 'w');
-		// FS.write(CONSOLE.path.dir+filename, message, 'w');
-		// // latest
-		// var folder = '/' + status;
-		// var file = '/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() + ' .txt';
-		// FS.touch(CONSOLE.path.dir+filename);
-		// FS.write(CONSOLE.path.dir+filename, message, 'w');
-	//}
 };
 CASPER.logHTML = '';
 CASPER.str = Object({
