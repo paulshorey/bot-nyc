@@ -1,1 +1,4 @@
-casperjs bot.js
+while true; do
+	casperjs bot.js
+	sleep 30
+done
