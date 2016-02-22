@@ -1,0 +1,2 @@
+rm -rf logs
+http-server logs -p 8000 -d false -s -c 540

@@ -1,3 +1,5 @@
+//"use strict";
+
 var DT = new Date();
 var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
@@ -10,6 +12,44 @@ var APP = {
 };
 
 var SITES = [];
+
+// var CONSOLE = (function(params){
+// 	var CONSOLE = arguments.callee;
+// 	// setup
+// 	if (!params) {
+// 		var path = CONSOLE.path = {};
+// 		path.pre = '.';
+// 		path.dir = path.pre+'/logs';
+// 		if (!FS.exists(path.dir)) {
+// 			FS.makeDirectory(path.dir);
+// 		}
+// 		// write
+// 		CONSOLE.log = function(message, params) {
+// 			CONSOLE.write(message,params);
+// 			CONSOLE.append(message,params);
+// 		},
+// 		CONSOLE.write = function(message, params) {
+// 			var filename = '/latest';
+// 			FS.touch(CONSOLE.path.dir+filename);
+// 			FS.write(CONSOLE.path.dir+filename, message, 'w');
+// 		};
+// 		CONSOLE.append = function(message, params) {
+// 			var filename = '/all';
+// 			var message = message + '\n' + FS.read(CONSOLE.path.all, message, 'w');
+// 			FS.write(CONSOLE.path.dir+filename, message, 'w');
+// 		};
+// 		// all
+// 		FS.touch(CONSOLE.path.all);
+// 	}
+// 	// automatic
+// 	if (typeof params == 'string') {
+// 		console.log('logging...');
+// 		CONSOLE.log(params);
+// 	}
+// 	// save
+// 	return CONSOLE;
+// }());
+// CONSOLE.log('console');
 
 var CASPER = require('casper').create({
 	waitTimeout: 10000,
@@ -75,53 +115,53 @@ CASPER.on('complete.error', function(err) {
 
 // helpers
 CASPER.log = function(message, status) {
-	// default
-	if (!status) {
-		status = 'debug';
-	}
-	// always
-	if (!this.options.log_statuses) {
-		this.options.log_statuses = ['error'];
-	} else if (this.options.log_statuses.indexOf('error') < 0) {
-		this.options.log_statuses.push('error');
-	}
-	// skip
-	if (this.options.log_statuses.indexOf(status) < 0) {
+	// skip banal debug logs
+	if (status=='debug') {
 		return false;
 	}
 	// format
-	if (typeof message === 'object') {
+	if (typeof message == 'object') {
 		message = JSON.stringify(Object.keys(message), null, ' ');
-	} else if (typeof message === 'function') {
+	} else if (typeof message == 'function') {
 		message = JSON.stringify(message, null, ' ');
 	} else {
 		message = message;
 	}
 	// log
-	if (!this.log.messages[message.replace(/\"*\'*\\*/g, '')]) {
-		if (status == 'error') {
-			message = '[ERROR]       ' + message;
-			// write
-			FS.write(
-				'errors/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() + ' .txt',
-				JSON.stringify(Object.keys(this.log.messages), null, ' ') + " \n" + message,
-				'w'
-			);
-		} else if (status === 'warning') {
-			message = '[WARNING]     ' + message;
-		} else if (status === 'info') {
-			message = '[INFO]        ' + message;
-		}
-		if (status === 'debug') {
-			message = '[DEBUG]       ' + message;
-		}
-		this.log.messages[message.replace(/\"*\'*\\*/g, '')] = true;
-		this.echo(message, status.toUpperCase());
-
+	// to FILE
+	var action = (status=='error'||status=='info') ? status : 'log';
+	if (status=='warning') {
+		action = 'warn';
 	}
+	CASPER.logHTML = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + CASPER.logHTML;
+	FS.write(
+		'node_console/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + '.html', // + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		this.logHTML,
+		'w'
+	);
+	// to CONSOLE
+	if (status == 'error') {
+		message = '[ERROR]       ' + message;
+	} else if (status == 'warning') {
+		message = '[WARNING]     ' + message;
+	} else if (status == 'info') {
+		message = '[INFO]        ' + message;
+	} else if (status == 'debug') {
+		message = '[DEBUG]       ' + message;
+	}
+	this.echo(message, status.toUpperCase());
+		// all
+		// var filename = '/all';
+		// var message = message + '\n' + FS.read(CONSOLE.path.all, message, 'w');
+		// FS.write(CONSOLE.path.dir+filename, message, 'w');
+		// // latest
+		// var folder = '/' + status;
+		// var file = '/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() + ' .txt';
+		// FS.touch(CONSOLE.path.dir+filename);
+		// FS.write(CONSOLE.path.dir+filename, message, 'w');
+	//}
 };
-CASPER.log.warnings = [];
-CASPER.log.messages = [];
+CASPER.logHTML = '';
 CASPER.str = Object({
 	pad: function(str) {
 		str = str.toString();
