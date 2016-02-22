@@ -1,2 +1,0 @@
-rm -rf console
-http-server console -p 8000 -d false -s -c 30
