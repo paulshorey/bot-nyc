@@ -133,9 +133,9 @@ CASPER.log = function(message, status) {
 	if (status=='warning') {
 		action = 'warn';
 	}
-	CASPER.logHTML = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + CASPER.logHTML;
+	this.logHTML = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + this.logHTML;
 	FS.write(
-		'node_console/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + '.html', // + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		'console/logs/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()) + '.' + this.str.pad(DT.getDate()) + '.html', // + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
 		this.logHTML,
 		'w'
 	);
