@@ -139,7 +139,7 @@ CASPER.log = function(message, status) {
 	}
 	this.logHTML = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + this.logHTML;
 	FS.write(
-		'public/console/logs/' + this.logHTMLdate + '', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		'public/console/logs/' + this.logHTMLdate + '.html', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
 		this.logHTML,
 		'w'
 	);
