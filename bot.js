@@ -1,5 +1,4 @@
 //"use strict";
-
 var DT = new Date();
 var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
@@ -115,6 +114,11 @@ CASPER.on('complete.error', function(err) {
 
 // helpers
 CASPER.log = function(message, status) {
+	// start each day
+	if (this.logHTMLdate != DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate())) {
+		this.logHTML = '';
+		this.logHTMLdate = DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate());
+	}
 	// skip banal debug logs
 	if (status=='debug') {
 		return false;
@@ -135,7 +139,7 @@ CASPER.log = function(message, status) {
 	}
 	this.logHTML = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + this.logHTML;
 	FS.write(
-		'public/console/logs/' + DT.getFullYear() + '.' + this.str.pad(DT.getMonth()+1) + '.' + this.str.pad(DT.getDate()) + '.html', // + ' ' + this.str.pad(DT.getHours()) + ':' + this.str.pad(DT.getMinutes()) + ':' + this.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		'public/console/logs/' + this.logHTMLdate + '', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
 		this.logHTML,
 		'w'
 	);
@@ -151,16 +155,13 @@ CASPER.log = function(message, status) {
 	}
 	this.echo(message, status.toUpperCase());
 };
-CASPER.logHTML = '';
-CASPER.str = Object({
-	pad: function(str) {
-		str = str.toString();
-		var strlen = str.length || 1;
-		return (strlen < 2 ? "0" + str : str);
-	}
-});
-CASPER.log( 'Logged: '+ DT.getFullYear() + '.' + CASPER.str.pad(DT.getMonth()+1) + '.' + CASPER.str.pad(DT.getDate()) + ' ' + CASPER.str.pad(DT.getHours()) + ':' + CASPER.str.pad(DT.getMinutes()) + ':' + CASPER.str.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() , 'info');
-
+CASPER.logHTML = '#'+CASPER.iteration;
+CASPER.log( 'Started: ' + DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() , 'info' );
+CASPER.iteration = '?';
+if (CASPER.cli.has("iteration")) {
+	CASPER.iteration.total = CASPER.cli.get("iteration");
+}
+CASPER.log( 'Crawl # '+CASPER.iteration.total, 'info');
 
 ///////////////////////////////////////////////////////////////////
 // GET /sites

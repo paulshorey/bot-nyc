@@ -96,3 +96,9 @@ exports.stripslashes = function(str) {
 	// str = str.replace(/\\\\/g, '\\');
 	return str;
 };
+
+exports.pad = function(str) {
+	str = str.toString();
+	var strlen = str.length || 1;
+	return (strlen < 2 ? "0" + str : str);
+};
