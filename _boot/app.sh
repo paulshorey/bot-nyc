@@ -1,4 +1,4 @@
-cd /www/$(hostname)
+cd /www/bot-nyc
 i=0;
 while true; do
 	i=$[$i+1]
