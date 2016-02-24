@@ -4,7 +4,7 @@ var FS = require('fs');
 var FUN = require('./node_custom/fun.js');
 
 var APP = {
-	"sites_server": 'http://localhost:9000',
+	"sites_server": 'http://api.allevents.nyc',
 	"path": '/www/bot.nyc',
 	"path_in": '',
 	"path_out": ''
@@ -70,6 +70,12 @@ CASPER.on('complete.error', function(err) {
 });
 // helpers
 CASPER.console = {};
+CASPER.console.html = '';
+CASPER.console.date = '';
+CASPER.iteration = '?';
+if (CASPER.cli.has("iteration")) {
+	CASPER.iteration = CASPER.cli.get("iteration");
+}
 CASPER.console.write = function(message, status) {
 	// start each day
 	if (CASPER.console.date != DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate())) {
@@ -99,7 +105,7 @@ CASPER.console.write = function(message, status) {
 	}
 	CASPER.console.html = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + CASPER.console.html;
 	FS.write(
-		'public/console/logs/' + CASPER.console.date + '.html', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		'public/console/logs.html', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
 		CASPER.console.html,
 		'w'
 	);
@@ -127,13 +133,7 @@ CASPER.console.warn = function(message) {
 CASPER.console.error = function(message) {
 	CASPER.console.write(message, 'error');
 }
-CASPER.iteration = '?';
-if (CASPER.cli.has("iteration")) {
-	CASPER.iteration = CASPER.cli.get("iteration");
-}
-CASPER.console.html = '#'+CASPER.iteration;
-CASPER.console.info( 'Started: ' + DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() , 'info' );
-CASPER.console.info( 'Crawl # '+CASPER.iteration.total, 'info');
+CASPER.console.info( 'Crawl #'+CASPER.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 
 ///////////////////////////////////////////////////////////////////
 // GET /sites

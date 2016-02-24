@@ -321,9 +321,9 @@ pp.doOnce = function(){
 	}
 	window.pp.doneOnce = true;
 	
-	console.log('uu.js ... '+window.location.href);
+	window.console.log('window.location.href: '+window.location.href);
 	
-	window.console.log('start... scroll =  '+window.document.body.scrollTop);
+	window.console.log('window.document.body.scrollTop: '+window.document.body.scrollTop);
 	var hash = window.location.hash.substr(1);
 	if (hash) {
 		if ($('a[name="'+hash+'"]').length) {
