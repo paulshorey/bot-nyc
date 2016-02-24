@@ -31,17 +31,17 @@ var CASPER = require('casper').create({
 		"ignoreSslErrors": true
 	},
 	onWaitTimeout: function(timeout, step) {
-		this.log('onWaitTimeout\': "' + (this.site ? this.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
-		this.clear();
-		this.page.stop();
+		CASPER.log('onWaitTimeout\': "' + (CASPER.site ? CASPER.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+		CASPER.clear();
+		CASPER.page.stop();
 	},
 	onStepTimeout: function(timeout, step) {
-		this.log('onStepTimeout\': "' + (this.site ? this.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
-		this.clear();
-		this.page.stop();
+		CASPER.log('onStepTimeout\': "' + (CASPER.site ? CASPER.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+		CASPER.clear();
+		CASPER.page.stop();
 	},
 	onResourceReceived: function(timeout, step) {
-		//this.log( 'onResourceReceived\': "' + ( this.site ? this.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
+		//CASPER.log( 'onResourceReceived\': "' + ( CASPER.site ? CASPER.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 	},
 	clientScripts: [
 		APP.path + "/remote_assets/vendor/all.js",
@@ -51,7 +51,7 @@ var CASPER = require('casper').create({
 // events
 CASPER.on('run.complete', function() {
 	CASPER.console.warn('Test completed');
-	this.exit();
+	CASPER.exit();
 });
 CASPER.on('remote.message', function(msg) {
 	CASPER.console.log('		' + msg, 'error');
@@ -144,9 +144,9 @@ CASPER.start();
 CASPER.thenOpen(APP.sites_server+'/sites', {
 	method: 'get'
 }, function(headers) {
-	var sites = JSON.parse(this.getPageContent());
-	this.echo('sites:');
-	this.echo(FUN.stringify_once(sites));
+	var sites = JSON.parse(CASPER.getPageContent());
+	CASPER.echo('sites:');
+	CASPER.echo(FUN.stringify_once(sites));
 
 	// sites
 	var SITES = [];
@@ -154,14 +154,14 @@ CASPER.thenOpen(APP.sites_server+'/sites', {
 		SITES.push(sites[s]);
 	}
 	CASPER.eachThen(SITES, function(response) {
-		this.site = JSON.parse(FUN.stringify_once(response.data));
+		CASPER.site = JSON.parse(FUN.stringify_once(response.data));
 
 		///////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////
 		// HAUNT
-		this.thenOpen(this.site.link, function(headers) {
-			this.waitFor(function() {
-				return this.site.items = this.evaluate(function(site) {
+		CASPER.thenOpen(CASPER.site.link, function(headers) {
+			CASPER.waitFor(function() {
+				return CASPER.site.items = CASPER.evaluate(function(site) {
 						
 						// inside
 						var items = [];
@@ -372,15 +372,15 @@ CASPER.thenOpen(APP.sites_server+'/sites', {
 						//console.log('ok! '+JSON.stringify(items));
 						return items.length ? items : false;
 						
-				},this.site);
+				},CASPER.site);
 			}, function(data) {
 				///////////////////////////////////////////////////////////////////
 				///////////////////////////////////////////////////////////////////
 				// SUCCESS
-				CASPER.console.info('Found '+(this.site.items.length||0)+' items');
-				if (this.site.items) {
+				CASPER.console.info('Found '+(CASPER.site.items.length||0)+' items');
+				if (CASPER.site.items) {
 					var post = {};
-					post.site = this.site;
+					post.site = CASPER.site;
 					// post
 					CASPER.thenOpen(APP.sites_server+'/site', {
 						method: 'post',
