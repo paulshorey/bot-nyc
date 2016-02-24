@@ -1,6 +1,6 @@
-cd /www
-cd bot.nyc
+cd /www/$(hostname)
 git pull
+npm install
 i=0;
 while true; do
 	i=$[$i+1]
