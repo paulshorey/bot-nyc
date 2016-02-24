@@ -88,9 +88,9 @@ CASPER.console.write = function(message, status) {
 	}
 	// format
 	if (typeof message == 'object') {
-		message = JSON.stringify(Object.keys(message), null, ' ');
+		message = JSON.stringify(message, null, ' ').replace(/[\n\r\t]/g,'');
 	} else if (typeof message == 'function') {
-		message = JSON.stringify(message, null, ' ');
+		message = JSON.stringify(message, null, ' ').replace(/[\n\r\t]/g,'');
 	} else if (typeof message == 'string') {
 		message = message.trim();
 		message = message.replace(/[\n\r\t]/g,'');
@@ -133,8 +133,8 @@ CASPER.console.warn = function(message) {
 CASPER.console.error = function(message) {
 	CASPER.console.write(message, 'error');
 }
-CASPER.console.warn('CASPER.cli');
-CASPER.console.warn(CASPER.cli);
+CASPER.console.warn('CASPER.cli.options');
+CASPER.console.warn(CASPER.cli.options);
 CASPER.console.info( 'Crawl #'+CASPER.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 
 ///////////////////////////////////////////////////////////////////

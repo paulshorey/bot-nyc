@@ -2,7 +2,7 @@ cd /www
 cd bot.nyc
 i=0;
 while true; do
-	((i++))
+	i=(($i+1))
 	casperjs bot.js --iteration=$i
 	sleep 60
 done
