@@ -5,7 +5,7 @@ var FUN = require('./node_custom/fun.js');
 
 var APP = {
 	"sites_server": 'http://api.allevents.nyc',
-	"path": '/www/bot.nyc',
+	"path": '/www/bot-nyc',
 	"path_in": '',
 	"path_out": ''
 };
