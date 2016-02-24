@@ -133,6 +133,8 @@ CASPER.console.warn = function(message) {
 CASPER.console.error = function(message) {
 	CASPER.console.write(message, 'error');
 }
+CASPER.console.warn('CASPER.cli');
+CASPER.console.warn(CASPER.cli);
 CASPER.console.info( 'Crawl #'+CASPER.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 
 ///////////////////////////////////////////////////////////////////
