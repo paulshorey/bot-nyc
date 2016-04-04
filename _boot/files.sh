@@ -1,5 +1,6 @@
-iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 2080
+sleep 10
+
 cd /www/bot-nyc
-rm -rf public/console/logs
-echo starting http-server
-http-server public -p 2080 -s -c 30 #-d false
+
+echo http-server starting... :9080
+http-server public -p 9080 -s -c 30 #-d false

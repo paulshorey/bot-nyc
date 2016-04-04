@@ -322,8 +322,7 @@ pp.doOnce = function(){
 	window.pp.doneOnce = true;
 	
 	window.console.log('window.location.href: '+window.location.href);
-	
-	window.console.log('window.document.body.scrollTop: '+window.document.body.scrollTop);
+
 	var hash = window.location.hash.substr(1);
 	if (hash) {
 		if ($('a[name="'+hash+'"]').length) {
@@ -333,6 +332,9 @@ pp.doOnce = function(){
 		}
 	}
 	
+	window.document.body.scrollTop=100000;
+	window.console.log('window.document.body.scrollTop: '+window.document.body.scrollTop);
+
 };
 pp.doOnce();
 
@@ -340,10 +342,3 @@ pp.doAlways = function(){
 	window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
 	console.log('scrolled: '+window.document.body.scrollTop);
 };
-
-
-
-
-
-
-
