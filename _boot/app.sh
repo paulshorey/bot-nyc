@@ -1,18 +1,15 @@
-<<<<<<< HEAD
+#iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 2080
+
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/ps1-git
 cd /www/bot-nyc
+git reset HEAD -\-hard;
+git pull
 
 i=0;
 while true; do
 	i=$[$i+1]
-	casperjs casper.js --iteration=$i
+	echo casperjs go.js \#$i starting...
+	casperjs bot.js --iteration=$i
 	sleep 60
 done
-=======
-# cd /www/bot-nyc
-# i=0;
-# while true; do
-# 	i=$[$i+1]
-# 	casperjs bot.js --iteration=$i
-# 	sleep 60
-# done
->>>>>>> 358b1759c028e063c89f44b2a284c6fa8cbb1319
