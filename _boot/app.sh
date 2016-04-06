@@ -6,10 +6,10 @@ cd /www/bot-nyc
 git reset HEAD -\-hard;
 git pull
 
-i=0;
-while true; do
-	i=$[$i+1]
-	echo casperjs go.js \#$i starting...
-	casperjs bot.js --iteration=$i
-	sleep 60
-done
+# i=0;
+# while true; do
+# 	i=$[$i+1]
+# 	echo casperjs go.js \#$i starting...
+# 	casperjs bot.js --iteration=$i
+# 	sleep 60
+# done
