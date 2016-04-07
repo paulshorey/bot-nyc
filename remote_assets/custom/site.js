@@ -1,3 +1,13 @@
+window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
+console.log('## "'+window.location.href+'" scroll='+window.document.body.scrollTop);
+
+$(window).ajaxSend(function() {
+	console.log('## ajaxSend');
+});
+$(window).ajaxComplete(function() {
+	console.log('## ajaxComplete');
+});
+
 window.casperJsHaunt = function(site) {
 
 	// items
@@ -76,7 +86,7 @@ window.casperJsHaunt = function(site) {
 
 				// parse
 				pp.parseStack(site, stack, this);
-				
+
 				stack.i++;
 			});
 
@@ -186,7 +196,7 @@ window.casperJsHaunt = function(site) {
 			///////////////////////////////////////////////////////////////////
 			// SCORE
 			if (!item.title[0]) {
-				//return true;
+				return true;
 			}
 			if (!item.link[0] || item.link.length>3) {
 				item.score -= 1;
@@ -198,7 +208,7 @@ window.casperJsHaunt = function(site) {
 				item.score += 1;
 			}
 			if (item.score < 100) { // discard if missing both image and link
-				//return true;
+				return true;
 			}
 
 			///////////////////////////////////////////////////////////////////

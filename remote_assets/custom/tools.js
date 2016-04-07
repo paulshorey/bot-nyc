@@ -336,9 +336,3 @@ pp.doOnce = function(){
 	window.console.log('window.document.body.scrollTop: '+window.document.body.scrollTop);
 
 };
-pp.doOnce();
-
-pp.doAlways = function(){
-	window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
-	console.log('scrolled: '+window.document.body.scrollTop);
-};
