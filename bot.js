@@ -1,20 +1,23 @@
 // SETUP
 // same bot.js as go.js
 
-		//"use strict";
-		//https://github.com/benfoxall/phantomjs-webserver-example/blob/master/server.js
 		var DT = new Date();
 		var FS = require('fs');
 		var FUN = require('./node_custom/fun.js');
 
+
 		var CONFIG = {
 			"sites_server": 'http://api.allevents.nyc',
-			"path": '/www/bot-nyc',
+			"path_root": '',
 			"path_in": '',
-			"path_out": ''
+			"path_out": '',
+			"port":80,
+			"iteration":0
 		};
+		CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
+		CONFIG.path_root.pop();
+		CONFIG.path_root = CONFIG.path_root.join('/');
 
-		var SITES = [];
 
 		var CASPER = require('casper').create({
 			waitTimeout: 10000,
@@ -49,11 +52,11 @@
 				//CASPER.log( 'onResourceReceived\': "' + ( SITE ? SITE.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 			},
 			clientScripts: [
-				CONFIG.path + "/remote_assets/vendor/jquery.js",
-				CONFIG.path + "/remote_assets/vendor/underscore.js",
-				CONFIG.path + "/remote_assets/vendor/sugar.js",
-				CONFIG.path + "/remote_assets/custom/tools.js",
-				CONFIG.path + "/remote_assets/custom/site.js"
+				CONFIG.path_root + "/remote_assets/vendor/jquery.js",
+				CONFIG.path_root + "/remote_assets/vendor/underscore.js",
+				CONFIG.path_root + "/remote_assets/vendor/sugar.js",
+				CONFIG.path_root + "/remote_assets/custom/tools.js",
+				CONFIG.path_root + "/remote_assets/custom/site.js"
 			]
 		});
 		// events
@@ -73,10 +76,6 @@
 		CASPER.console = {};
 		CASPER.console.html = '';
 		CASPER.console.date = '';
-		CASPER.iteration = '0';
-		if (CASPER.cli.has("iteration")) {
-			CASPER.iteration = CASPER.cli.get("iteration");
-		}
 		CASPER.console.write = function(message, status) {
 			// start each day
 			if (CASPER.console.date != DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate())) {
@@ -150,13 +149,21 @@
 		// 	return false;
 		// });
 
+		// CONFIG (amended after CASPER ready)
+		if (CASPER.cli.has("port")) {
+			CONFIG.port = CASPER.cli.get("port");
+		}
+		if (CASPER.cli.has("iteration")) {
+			CONFIG.iteration = CASPER.cli.get("iteration");
+		}
+
 
 // CRAWL
 // bot.js crawls list of files, from /sites api
 // go.js crawls one, posted to self (webserver)
-CASPER.console.warn('CASPER.cli.options');
-CASPER.console.warn(CASPER.cli.options);
-CASPER.console.info( 'Crawl #'+CASPER.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
+// CASPER.console.warn('CASPER.cli.options');
+// CASPER.console.warn(CASPER.cli.options);
+// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 
 ///////////////////////////////////////////////////////////////////
 // GET /sites
@@ -171,15 +178,13 @@ CASPER.thenOpen(CONFIG.sites_server+'/sites', {
 		CASPER.console.error('!all.data || !all.data.sites');
 		return false;
 	}
-
-	// sites
 	var SITES = [];
 	for (var s in all.data.sites) {
 		SITES.push(all.data.sites[s]);
 	}
 	CASPER.console.log('SITES: ' + (typeof SITES) );
 
-	// site
+	// go
 	CASPER.eachThen(SITES, function(response) {
 		var SITE = {};
 		SITE = response.data;
