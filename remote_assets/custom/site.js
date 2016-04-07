@@ -1,12 +1,18 @@
 window.casperJsHaunt = function(site) {
 
-	// inside
-	var items = [];
-
+	// items
+	var elements = {};
 	if (site.elements.item) {
-		// ok go
+		elements = $(site.elements.item);
+	} else {
+		// later automate
+	}
+
+	// item
+	if (elements) {
+		var items = [];
 		var i = 0;
-		$(site.elements.item).each(function() {
+		elements.each(function() {
 			i++;
 			var item = {score:100};
 			
@@ -67,7 +73,10 @@ window.casperJsHaunt = function(site) {
 			}
 			stack.i = 0;
 			$(this).find('*').reverse().each(function() {
+
+				// parse
 				pp.parseStack(site, stack, this);
+				
 				stack.i++;
 			});
 
