@@ -1,27 +1,32 @@
-var siteeval = function(site) {
+window.casperJsHaunt = function(site) {
+
+	// inside
 	var items = [];
-	if (site.element.selector) {
-		$(site.element.selector).each(function() {
-			var item = {};
-			item.img = {};
-			pp.parseImg(site, item, this);
+
+	if (site.elements.item) {
+		// ok go
+		var i = 0;
+		$(site.elements.item).each(function() {
+			i++;
+			var item = {score:100};
 			
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// MANUAL
 			///////////////////////////////////////////////////////////////////
+			// img // better to get automatically
 			// title
-			if (site.element.title) {
+			if (site.elements.title) {
 				item.title = [];
 			}
 			// date
-			if (site.element.date) {
+			if (site.elements.date) {
 				item.date = [];
-				if (typeof site.element.date == 'string') {
-					site.element.date = {"0":site.element.date};
+				if (typeof site.elements.date == 'string') {
+					site.elements.date = {"0":site.elements.date};
 				}
-				for (var c in site.element.date) {
-					var elem = eval('$(this)'+site.element.date[c]);
+				for (var c in site.elements.date) {
+					var elem = eval('$(this)'+site.elements.date[c]);
 					if (elem) {
 						var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
 						item.date.push(date);
@@ -29,7 +34,7 @@ var siteeval = function(site) {
 				}
 			}
 			// link
-			if (site.element.link) {
+			if (site.elements.link) {
 				item.link = [];
 			}
 			
@@ -38,15 +43,27 @@ var siteeval = function(site) {
 			// AUTO
 			///////////////////////////////////////////////////////////////////
 			// stack-cards (parse)
-			var stack = {};
+			var stack = {x:{}};
 			if (!item.title) {
 				stack.title = [];
+				stack.x.title = {};
 			}
 			if (!item.date) {
 				stack.date = [];
+				stack.x.date = {};
 			}
 			if (!item.link) {
 				stack.link = [];
+				stack.x.link = {};
+			}
+			if (!item.img) {
+				stack.img = [];
+				stack.x.img = {};
+				var img = ($(this).html().match(/["']([^"]*.jpg)["']/i)||[])[1];
+				if (img) {
+					stack.img.push(img);
+					stack.x.img[img] = true;
+				}
 			}
 			stack.i = 0;
 			$(this).find('*').reverse().each(function() {
@@ -78,11 +95,31 @@ var siteeval = function(site) {
 			}
 			// date
 			if (!item.date) {
-				stack.date.reverse();
+				for (var card in stack.date) {
+					// start from the lowest points (back of element)
+					// compare current value, to all others with higher points (front of element)
+					//console.log(card,stack.title[card]);
+					var matches = [];
+					for (var c in stack.date) {
+						// compare to everything higher than itself
+						if (parseInt(c) > parseInt(card)) {
+							// if current fits into anything higher, remove current
+							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
+							if (stack.date[c].indexOf(stack.date[card]) != -1) {
+								delete stack.date[card];
+							}
+						}
+					}
+				}
+				stack.title.reverse();
 			}
 			// link
 			if (!item.link) {
 				stack.link.reverse();
+			}
+			// img
+			if (!item.img) {
+				stack.img.reverse();
 			}
 
 			///////////////////////////////////////////////////////////////////
@@ -110,7 +147,7 @@ var siteeval = function(site) {
 				item.link = [];
 				for (var card in stack.link) {
 					var link = stack.link[card];
-					// perfect "http://domain.com/..."
+					// absolute
 					if (link.indexOf(site.host)==0) {
 						item.link.push(link);
 					}
@@ -124,33 +161,48 @@ var siteeval = function(site) {
 					}
 				}
 			}
+			// img
+			if (!item.img) {
+				item.img = [];
+				for (var card in stack.img) {
+					var img = stack.img[card];
+					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
+						img = site.host + img;
+						item.img.push(img);
+					}
+				}
+			}
+
+			///////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////
+			// SCORE
+			if (!item.title[0]) {
+				//return true;
+			}
+			if (!item.link[0] || item.link.length>3) {
+				item.score -= 1;
+			}
+			if (!item.img[0]) {
+				item.score -= 1;
+			}
+			if (item.date[0]) {
+				item.score += 1;
+			}
+			if (item.score < 100) { // discard if missing both image and link
+				//return true;
+			}
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// DONE
-			///////////////////////////////////////////////////////////////////
+			console.log(i+' '+JSON.stringify(item.link,null,"\t"));
 			items.push(item);
-
+			
 		});
 	}
-	return items;
 
-};
-var sitepost = function(site){
-	///////////////////////////////////////////////////////////////
-	// POST /site
-	if (site.items) {
-		var post = {};
-		post.site = site;
-		// post
-		CASPER.thenOpen('http://localhost:8000/site', {
-			method: 'post',
-			data: JSON.stringify(post, null, '\t'),
-			headers: {
-				'Content-type': 'application/json'
-			}
-		}, function(headers) {
-			this.echo('posted site');
-		});
+	if (items.length) {
+		return items;
 	}
-};
+
+}
