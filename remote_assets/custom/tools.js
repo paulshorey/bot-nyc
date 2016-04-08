@@ -223,13 +223,13 @@ pp.parseStack = function(site, stack, element) {
 	// link
 	if (stack.link && tag == 'A' && element.href && element.href.length > 12) {
 		var score = stack.i*10;
-		if (element.href.indexOf(site.link)!=-1) {
+		if (element.href.indexOf(site.data.link)!=-1) {
 			score += 100;
 		} else if (element.href.indexOf('/')===0) {
 			score += 50;
 		}
 		stack.link[score] = element.href;
-		if (text.indexOf(site.link)!=-1) { // if text contains link url, it is not a title
+		if (text.indexOf(site.data.link)!=-1) { // if text contains link url, it is not a title
 			return;
 		}
 	}

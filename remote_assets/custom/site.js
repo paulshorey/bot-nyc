@@ -10,17 +10,23 @@ $(window).ajaxComplete(function() {
 
 window.casperJsHaunt = function(site) {
 
+	// data 
+	var data = {};
+
 	// items
 	var elements = {};
-	if (site.elements.item) {
-		elements = $(site.elements.item);
+	if (site.data.elements.item) {
+		elements = $(site.data.elements.item);
 	} else {
 		// later automate
 	}
 
+	// more
+	// find ">" link, assign to data.more
+
 	// item
 	if (elements) {
-		var items = [];
+		data.items = [];
 		var i = 0;
 		elements.each(function() {
 			i++;
@@ -32,17 +38,17 @@ window.casperJsHaunt = function(site) {
 			///////////////////////////////////////////////////////////////////
 			// img // better to get automatically
 			// title
-			if (site.elements.title) {
+			if (site.data.elements.title) {
 				item.title = [];
 			}
 			// date
-			if (site.elements.date) {
+			if (site.data.elements.date) {
 				item.date = [];
-				if (typeof site.elements.date == 'string') {
-					site.elements.date = {"0":site.elements.date};
+				if (typeof site.data.elements.date == 'string') {
+					site.data.elements.date = {"0":site.data.elements.date};
 				}
-				for (var c in site.elements.date) {
-					var elem = eval('$(this)'+site.elements.date[c]);
+				for (var c in site.data.elements.date) {
+					var elem = eval('$(this)'+site.data.elements.date[c]);
 					if (elem) {
 						var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
 						item.date.push(date);
@@ -50,7 +56,7 @@ window.casperJsHaunt = function(site) {
 				}
 			}
 			// link
-			if (site.elements.link) {
+			if (site.data.elements.link) {
 				item.link = [];
 			}
 			
@@ -167,16 +173,16 @@ window.casperJsHaunt = function(site) {
 				for (var card in stack.link) {
 					var link = stack.link[card];
 					// absolute
-					if (link.indexOf(site.host)==0) {
+					if (link.indexOf(site.data.host)==0) {
 						item.link.push(link);
 					}
 					// relative
 					if (/^\//.test(link)) {
 						// maybe
-						item.link.push(site.host+link);
+						item.link.push(site.data.host+link);
 					} else if (link.length > 10 && !item.link) {
 						// last resort
-						item.link.push(site.host+'/'+link);
+						item.link.push(site.data.host+'/'+link);
 					}
 				}
 			}
@@ -186,7 +192,7 @@ window.casperJsHaunt = function(site) {
 				for (var card in stack.img) {
 					var img = stack.img[card];
 					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
-						img = site.host + img;
+						img = site.data.host + img;
 						item.img.push(img);
 					}
 				}
@@ -215,13 +221,11 @@ window.casperJsHaunt = function(site) {
 			///////////////////////////////////////////////////////////////////
 			// DONE
 			console.log(i+' '+JSON.stringify(item.link,null,"\t"));
-			items.push(item);
+			data.items.push(item);
 			
 		});
 	}
 
-	if (items.length) {
-		return items;
-	}
+	return data.items;
 
 }
