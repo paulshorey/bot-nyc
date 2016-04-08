@@ -8,15 +8,13 @@ $(window).ajaxComplete(function() {
 	console.log('## ajaxComplete');
 });
 
-window.casperJsHaunt = function(site) {
-
-	// data 
-	var data = {};
+window.casbot = {};
+window.casbot.haunt = function(EACH) {
 
 	// items
 	var elements = {};
-	if (site.data.elements.item) {
-		elements = $(site.data.elements.item);
+	if (EACH.site.elements.item) {
+		elements = $(EACH.site.elements.item);
 	} else {
 		// later automate
 	}
@@ -26,7 +24,7 @@ window.casperJsHaunt = function(site) {
 
 	// item
 	if (elements) {
-		data.items = [];
+		EACH.items = [];
 		var i = 0;
 		elements.each(function() {
 			i++;
@@ -38,17 +36,17 @@ window.casperJsHaunt = function(site) {
 			///////////////////////////////////////////////////////////////////
 			// img // better to get automatically
 			// title
-			if (site.data.elements.title) {
+			if (EACH.site.elements.title) {
 				item.title = [];
 			}
 			// date
-			if (site.data.elements.date) {
+			if (EACH.site.elements.date) {
 				item.date = [];
-				if (typeof site.data.elements.date == 'string') {
-					site.data.elements.date = {"0":site.data.elements.date};
+				if (typeof EACH.site.elements.date == 'string') {
+					EACH.site.elements.date = {"0":EACH.site.elements.date};
 				}
-				for (var c in site.data.elements.date) {
-					var elem = eval('$(this)'+site.data.elements.date[c]);
+				for (var c in EACH.site.elements.date) {
+					var elem = eval('$(this)'+EACH.site.elements.date[c]);
 					if (elem) {
 						var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
 						item.date.push(date);
@@ -56,7 +54,7 @@ window.casperJsHaunt = function(site) {
 				}
 			}
 			// link
-			if (site.data.elements.link) {
+			if (EACH.site.elements.link) {
 				item.link = [];
 			}
 			
@@ -91,7 +89,7 @@ window.casperJsHaunt = function(site) {
 			$(this).find('*').reverse().each(function() {
 
 				// parse
-				pp.parseStack(site, stack, this);
+				stack = pp.parseStack(EACH.site, stack, this);
 
 				stack.i++;
 			});
@@ -173,16 +171,16 @@ window.casperJsHaunt = function(site) {
 				for (var card in stack.link) {
 					var link = stack.link[card];
 					// absolute
-					if (link.indexOf(site.data.host)==0) {
+					if (link.indexOf(EACH.site.host)==0) {
 						item.link.push(link);
 					}
 					// relative
 					if (/^\//.test(link)) {
 						// maybe
-						item.link.push(site.data.host+link);
+						item.link.push(EACH.site.host+link);
 					} else if (link.length > 10 && !item.link) {
 						// last resort
-						item.link.push(site.data.host+'/'+link);
+						item.link.push(EACH.site.host+'/'+link);
 					}
 				}
 			}
@@ -192,7 +190,7 @@ window.casperJsHaunt = function(site) {
 				for (var card in stack.img) {
 					var img = stack.img[card];
 					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
-						img = site.data.host + img;
+						img = EACH.site.host + img;
 						item.img.push(img);
 					}
 				}
@@ -220,12 +218,11 @@ window.casperJsHaunt = function(site) {
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// DONE
-			console.log(i+' '+JSON.stringify(item.link,null,"\t"));
-			data.items.push(item);
+			EACH.items.push(item);
 			
 		});
 	}
 
-	return data.items;
+	return EACH;
 
 }

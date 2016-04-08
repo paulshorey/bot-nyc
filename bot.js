@@ -6,10 +6,8 @@
 	var FUN = require('./node_custom/fun.js');
 
 	var CONFIG = {
-		"sites_server": 'http://api.allevents.nyc',
+		"api_host": 'http://api.allevents.nyc',
 		"path_root": '',
-		"path_in": '',
-		"path_out": '',
 		"port":80,
 		"iteration":0
 	};
@@ -22,7 +20,13 @@
 		stepTimeout: 1000,
 		retryTimeout: 100,
 		verbose: true,
-		exitOnError: false
+		exitOnError: false,
+		onWaitTimeout: function(timeout, step) {
+		},
+		onStepTimeout: function(timeout, step) {
+		},
+		onResourceReceived: function(timeout, step) {
+		},
 	});
 
 	var CASPER = require('casper').create({
@@ -45,24 +49,24 @@
 			"ignoreSslErrors": true
 		},
 		onWaitTimeout: function(timeout, step) {
-			// CASPER.log('onWaitTimeout\': "' + (site ? site.data.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+			// CASPER.log('onWaitTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
 			// CASPER.clear();
 			// CASPER.page.stop();
 		},
 		onStepTimeout: function(timeout, step) {
-			// CASPER.log('onStepTimeout\': "' + (site ? site.data.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+			// CASPER.log('onStepTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
 			// CASPER.clear();
 			// CASPER.page.stop();
 		},
 		onResourceReceived: function(timeout, step) {
-			//CASPER.log( 'onResourceReceived\': "' + ( site ? site.data.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
+			//CASPER.log( 'onResourceReceived\': "' + ( site ? EACH.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 		},
 		clientScripts: [
 			CONFIG.path_root + "/remote_assets/vendor/jquery.js",
 			CONFIG.path_root + "/remote_assets/vendor/underscore.js",
 			CONFIG.path_root + "/remote_assets/vendor/sugar.js",
 			CONFIG.path_root + "/remote_assets/custom/tools.js",
-			CONFIG.path_root + "/remote_assets/custom/site.data.js"
+			CONFIG.path_root + "/remote_assets/custom/site.js"
 		]
 	});
 	// events
@@ -171,68 +175,79 @@
 
 
 /*
-	1. START
+	3. SAVE
 */
-CASPER.start();
-CASPER.thenOpen(CONFIG.sites_server+'/sites', {
-	method: 'get'
-}, function(headers) {
+var BOT = {};
+BOT.save = function() {
 
-	// sites
-	var sites = [];
-	var entries = JSON.parse(CASPER.getPageContent());
-	if (!entries.data) {
-		CASPER.console.error('no sites');
-		return false;
-	}
-	for (var s in entries.data.sites) {
-		sites.push(entries.data.sites[s]);
-	}
-	CASPER.console.log('sites: ' + (typeof sites) );
+	CASPER.console.info('Found '+(EACH.items.length||0)+' items');
+	// for (var it in EACH.items) {
+	// 	CASPER.console.log(EACH.items[it].text.substr(0,33));
+	// }
 
-	// site
-	CASPER.eachThen(sites, function(response) {
-		var site = {};
-		site.data = response.data;
-		CASPER.console.log('site: ' + (typeof site) );
-		CASPER.console.log('site.data.link: ' + site.data.link );
-		CASPER.console.log('site.data.elements.item: ' + site.data.elements.item );
-
-		CASPER.thenOpen(site.data.link, function(headers) {
-			
-			/*
-				>>
-			*/
-			BOT.wait();
-
+	if (EACH.items) {
+		var post = {items:[]};
+		for (var it in EACH.items) {
+			// MODEL
+			// set
+			var item = {};
+				item.date = EACH.items[it].date[0];
+				item.text = EACH.items[it].title[0];
+				item.time = Date.now();
+				item.site = {};
+				item.site.link = EACH.site.link;
+				item.site.title = EACH.site.title;
+			// conform to api
+			if (item.text && item.date) {
+				item.text = item.text.replace(item.date,'');
+			}
+			// save
+			post.items.push(item);
+			CASPER.console.info(item.text);
+		}
+		// post
+		POSTER.start();
+		POSTER.thenOpen(CONFIG.api_host+'/items', {
+			method: 'post',
+			data: JSON.stringify(post, null, '\t'),
+			headers: {
+				'Content-type': 'application/json'
+			}
+		}, function(headers) {
+			CASPER.console.info('POSTED to /site');
 		});
+		POSTER.run();
 
-	});
+		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
+	} else {
+		CASPER.console.warn(JSON.stringify(data));
+	}
 
-
-});
-CASPER.run();
-// POSTER.run();
-// POSTER.start();
-
+};
 
 /*
 	2. WAIT
 */
-var BOT = {};
 BOT.wait = function(){
+	// limit
+	CASPER.console.warn('wait '+EACH.waited);
+	if (EACH.waited>=3) {
+		return false;
+	}
+	EACH.waited++;
 
+	// go
 	CASPER.wait(1000);
 	CASPER.waitFor(function() {
 
 		// parsed
-		var parsed = CASPER.evaluate(function(site) {
-			return casperJsHaunt(site);
-		},site);
+		var parsed = CASPER.evaluate(function(EACH) {
+			return window.casbot.haunt(EACH);
+		},EACH);
 
-		// site.data.items
-		if (parsed.items && parsed.items.length) {
-			site.data.items = parsed.items;
+		// EACH.items
+		if (parsed && parsed.items && parsed.items.length) {
+			EACH.items = parsed.items;
 			return true;
 		}
 
@@ -242,8 +257,9 @@ BOT.wait = function(){
 		BOT.save(data);
 
 		// MORE items
-		if (site.data.elements.more) {
-			CASPER.thenClick(site.data.elements.more, function(){
+		if (EACH.site.elements.more) {
+			CASPER.console.warn('more...');
+			CASPER.thenClick(EACH.site.elements.more, function(){
 				BOT.wait();
 			});
 		}
@@ -257,31 +273,45 @@ BOT.wait = function(){
 
 
 /*
-	3. SAVE
+	1. START
 */
-BOT.save = function() {
+var EACH = {};
+CASPER.start();
+CASPER.thenOpen(CONFIG.api_host+'/sites', {
+	method: 'get'
+}, function(headers) {
 
-	CASPER.console.info('Found '+(site.data.items.length||0)+' items');
-	CASPER.console.log(JSON.stringify(site.data.items));
-	// for (var it in site.data.items) {
-	// 	CASPER.console.log(site.data.items[it].text.substr(0,33));
-	// }
-
-	if (site.data.items) {
-		var post = {};
-		post.site = site;
-		// post
-		// POSTER.open(CONFIG.sites_server+'/site', {
-		// 	method: 'post',
-		// 	data: JSON.stringify(post, null, '\t'),
-		// 	headers: {
-		// 		'Content-type': 'application/json'
-		// 	}
-		// }, function(headers) {
-		// 	CASPER.console.info('POSTED to /site');
-		// });
-	} else {
-		CASPER.console.warn(JSON.stringify(data));
+	// sites
+	var entries = JSON.parse(CASPER.getPageContent());
+	if (!entries.data) {
+		CASPER.console.error('no sites data');
+		return false;
 	}
+	var sites = [];
+	for (var s in entries.data) {
+		sites.push(entries.data[s]);
+	}
+	CASPER.console.log('sites: ' + sites.length );
 
-};
+	// EACH
+	CASPER.eachThen(sites, function(response) {
+		EACH.more = '';
+		EACH.waited = 0;
+		EACH.site = response.data;
+		CASPER.console.log('EACH.site.link: ' + EACH.site.link );
+		CASPER.console.log('EACH.site.elements.item: ' + EACH.site.elements.item );
+		CASPER.console.log('EACH.site.elements.more: ' + EACH.site.elements.more );
+		CASPER.thenOpen(EACH.site.link, function(headers) {
+			
+			/*
+				>>
+			*/
+			BOT.wait();
+
+		});
+
+	});
+
+
+});
+CASPER.run();

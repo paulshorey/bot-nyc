@@ -190,7 +190,7 @@ var pp = new Object();
 pp.parseStack = function(site, stack, element) {
 	var tag = element.tagName;
 	if (tag=='SCRIPT' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
-		return;
+		return stack;
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '))+' ';
 	var length = text.length;
@@ -205,7 +205,7 @@ pp.parseStack = function(site, stack, element) {
 		}
 		var text = $(element).attr('title') || $(element).attr('alt');
 		if (!text) { // see if it can be interpreted as date or title
-			return;
+			return stack;
 		}
 	}
 	if (stack.img && $(element).css('background-image') && $(element).css('background-image').toLowerCase().indexOf('.jpg')!=-1) {
@@ -223,14 +223,14 @@ pp.parseStack = function(site, stack, element) {
 	// link
 	if (stack.link && tag == 'A' && element.href && element.href.length > 12) {
 		var score = stack.i*10;
-		if (element.href.indexOf(site.data.link)!=-1) {
+		if (element.href.indexOf(site.link)!=-1) {
 			score += 100;
 		} else if (element.href.indexOf('/')===0) {
 			score += 50;
 		}
 		stack.link[score] = element.href;
-		if (text.indexOf(site.data.link)!=-1) { // if text contains link url, it is not a title
-			return;
+		if (text.indexOf(site.link)!=-1) { // if text contains link url, it is not a title
+			return stack;
 		}
 	}
 
@@ -246,7 +246,7 @@ pp.parseStack = function(site, stack, element) {
 		) {
 			var score = stack.i;
 			stack.date[score] = text;
-			return;
+			return stack;
 		}
 	}
 
@@ -255,7 +255,7 @@ pp.parseStack = function(site, stack, element) {
 		var score = stack.i*10;
 		// social?
 		if (length < 80 && text.match(/(Twitter|Facebook|Google|Tumblr|Share|URL)/i)) {
-			return;
+			return stack;
 		}
 		// title?
 		switch (tag) {
@@ -308,9 +308,10 @@ pp.parseStack = function(site, stack, element) {
 		}
 		
 		stack.title[score] = text;
-		return;
+		return stack;
 	}
 
+	return stack;
 };
 
 
