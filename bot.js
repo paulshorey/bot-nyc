@@ -6,7 +6,7 @@
 	var FUN = require('./node_custom/fun.js');
 
 	var CONFIG = {
-		"api_host": 'http://api.allevents.nyc',
+		"api_host": 'http://localhost:1080', //'http://api.allevents.nyc',
 		"path_root": '',
 		"port":80,
 		"iteration":0
@@ -178,9 +178,9 @@
 	3. SAVE
 */
 var BOT = {};
-BOT.save = function() {
+BOT.save = function(error) {
 
-	CASPER.console.info('Found '+(EACH.items.length||0)+' items');
+	CASPER.console.info('Found '+(EACH.items?EACH.items.length||0:0)+' items');
 	// for (var it in EACH.items) {
 	// 	CASPER.console.log(EACH.items[it].text.substr(0,33));
 	// }
@@ -220,7 +220,7 @@ BOT.save = function() {
 
 		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
 	} else {
-		CASPER.console.warn(JSON.stringify(data));
+		CASPER.console.warn(JSON.stringify(error));
 	}
 
 };
@@ -229,6 +229,7 @@ BOT.save = function() {
 	2. WAIT
 */
 BOT.wait = function(){
+	CASPER.console.info(JSON.stringify(CONFIG,null,'\t'));
 	// limit
 	CASPER.console.warn('wait '+EACH.waited);
 	if (EACH.waited>=3) {

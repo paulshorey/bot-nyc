@@ -1,15 +1,21 @@
-window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
-console.log('## "'+window.location.href+'" scroll='+window.document.body.scrollTop);
+// window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
+// console.log('## "'+window.location.href+'" scroll='+window.document.body.scrollTop);
 
-$(window).ajaxSend(function() {
-	console.log('## ajaxSend');
-});
-$(window).ajaxComplete(function() {
-	console.log('## ajaxComplete');
-});
+// $(window).ajaxSend(function() {
+// 	console.log('## ajaxSend');
+// });
+// $(window).ajaxComplete(function() {
+// 	console.log('## ajaxComplete');
+// });
 
 window.casbot = {};
 window.casbot.haunt = function(EACH) {
+	// idk
+	if (!window.jQuery) {
+		return false;
+	} else if (!window.$) {
+		window.$ = window.jQuery;
+	}
 
 	// items
 	var elements = {};
@@ -195,6 +201,11 @@ window.casbot.haunt = function(EACH) {
 					}
 				}
 			}
+
+			///////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////
+			// FILTER
+			// iterate each for each and if a value is the same in each, remove it for each
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
