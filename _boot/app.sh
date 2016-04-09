@@ -9,7 +9,7 @@ git pull
 # i=0;
 # while true; do
 # 	i=$[$i+1]
-# 	echo casperjs go.js \#$i starting...
+# 	echo casperjs haunt.js \#$i starting...
 # 	casperjs bot.js --iteration=$i
 # 	sleep 60
 # done

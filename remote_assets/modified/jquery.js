@@ -3755,3 +3755,11 @@ if (!window.jQuery) {
 		})
 	})(window);
 }
+
+// world's smallest jQuery plugin
+window.jQuery.fn.reverse = [].reverse;
+
+// aint no body got time for this!
+if (!window.$) {
+	window.$ = window.jQuery;
+}

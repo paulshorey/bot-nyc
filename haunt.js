@@ -1,4 +1,4 @@
-// SETUP
+// UPPERCASE global scope
 // same bot.js as go.js
 
 	var DT = new Date();
@@ -48,11 +48,10 @@
 			//CASPER.log( 'onResourceReceived\': "' + ( site ? EACH.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 		},
 		clientScripts: [
-			CONFIG.path_root + "/remote_assets/vendor/jquery.js",
-			CONFIG.path_root + "/remote_assets/vendor/underscore.js",
+			CONFIG.path_root + "/remote_assets/modified/jquery.js",
 			CONFIG.path_root + "/remote_assets/vendor/sugar.js",
-			CONFIG.path_root + "/remote_assets/custom/tools.js",
-			CONFIG.path_root + "/remote_assets/custom/site.js"
+			CONFIG.path_root + "/remote_assets/custom/parse.js",
+			CONFIG.path_root + "/remote_assets/custom/crawl.js"
 		]
 	});
 	// events
@@ -68,13 +67,16 @@
 	CASPER.on('complete.error', function(err) {
 		CASPER.die("		Complete callback has failed: " + err);
 	});
-	CASPER.on('remote.message', function(msg) {
+	CASPER.on('remote.message', function(msg, etc) {
 		// ignore site's console.logs, only show ours
-		if (msg.substr(0,2)!='##') {
-			return false;
+		if (msg.substr(0,2)=='##') {
+			msg = msg.substr(3);
+			CASPER.console.info('		' + msg, 'error');
 		}
-		msg = msg.substr(3);
-		CASPER.console.info('		' + msg, 'error');
+		if (msg.substr(0,2)=='# ') {
+			msg = msg.substr(2);
+			CASPER.console.log('		' + msg, 'error');
+		}
 	});
 	CASPER.on('error', function(msg, backtrace) {
 		CASPER.console.error(msg);
@@ -216,12 +218,13 @@ BOT.save = function(error) {
 		var post = {items:[]};
 		for (var it in EACH.items) {
 			// MODEL
-			// raw
-			CASPER.console.warn(JSON.stringify(EACH.items[it],null,'\t'));
-			// set
+			// item temporary stack
+			var its = EACH.items[it];
+			CASPER.console.warn(JSON.stringify(its,null,'\t'));
+			// item
 			var item = {};
-				item.text = EACH.items[it].text[0];
-				item.link = EACH.items[it].link[0] || EACH.site.link;
+				item.text = its.texts[0];
+				item.link = its.links[0] || EACH.site.link;
 				item.time = Date.now();
 				item.site = {};
 				item.site.link = EACH.site.link;
@@ -259,14 +262,14 @@ BOT.wait = function(){
 	// start
 	CASPER.waitFor(function() {
 
-		// parse
-		var parsed = CASPER.evaluate(function(EACH) {
-			return window.casbot.haunt(EACH);
+		// each evaluate
+		var each = CASPER.evaluate(function(each) {
+			return window.casbot.crawl(each);
 		},EACH);
 
-		// ADD items
-		if (parsed && parsed.items && parsed.items.length) {
-			EACH.items = parsed.items;
+		// EACH evaluated
+		if (each && each.items && each.items.length) {
+			EACH = each;
 			return true;
 		}
 
@@ -274,12 +277,12 @@ BOT.wait = function(){
 
 		// SAVE items
 		BOT.save(data);
-		CASPER.wait(2000);
+		CASPER.wait(1000);
 
 		// MORE items
-		if (EACH.site.elements.more) {
-			CASPER.console.warn('more...');
-			CASPER.thenClick(EACH.site.elements.more, function(){
+		if (EACH.selectors.more) {
+			CASPER.console.log('more = "'+EACH.selectors.more+'"');
+			CASPER.thenClick(EACH.selectors.more, function(){
 				BOT.wait();
 			});
 		}
@@ -319,8 +322,8 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 		EACH.waited = 0;
 		EACH.site = response.data;
 		CASPER.console.log('EACH.site.link: ' + EACH.site.link );
-		CASPER.console.log('EACH.site.elements.item: ' + EACH.site.elements.item );
-		CASPER.console.log('EACH.site.elements.more: ' + EACH.site.elements.more );
+		CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
+		CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
 		CASPER.thenOpen(EACH.site.link, function(headers) {
 			
 			/*
