@@ -220,12 +220,12 @@ BOT.save = function(error) {
 			// MODEL
 			// item temporary stack
 			var its = EACH.items[it];
-			CASPER.console.warn(JSON.stringify(its,null,'\t'));
+			//CASPER.console.warn(JSON.stringify(its,null,'\t'));
 			// item
 			var item = {};
 				item.text = its.texts[0];
 				item.link = its.links[0] || EACH.site.link;
-				item.time = Date.now();
+				item.time = its.times[0];
 				item.site = {};
 				item.site.link = EACH.site.link;
 				item.site.title = EACH.site.title;
@@ -233,7 +233,7 @@ BOT.save = function(error) {
 			if (item.text && item.date) {
 				item.text = item.text.replace(item.date,'');
 			}
-			CASPER.console.info(JSON.stringify(item,null,'\t'));
+			//CASPER.console.info(JSON.stringify(item,null,'\t'));
 			// save
 			post.items.push(item);
 		}
@@ -280,12 +280,12 @@ BOT.wait = function(){
 		CASPER.wait(1000);
 
 		// MORE items
-		if (EACH.selectors.more) {
-			CASPER.console.log('more = "'+EACH.selectors.more+'"');
-			CASPER.thenClick(EACH.selectors.more, function(){
-				BOT.wait();
-			});
-		}
+		// if (EACH.selectors.more) {
+		// 	CASPER.console.log('more = "'+EACH.selectors.more+'"');
+		// 	CASPER.thenClick(EACH.selectors.more, function(){
+		// 		BOT.wait();
+		// 	});
+		// }
 		
 	}, function(data) {
 		CASPER.console.error('BOT.wait: '+EACH.waited);

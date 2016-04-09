@@ -1,4 +1,4 @@
-console.log('# parse.js');
+//console.log('# parse.js');
 
 if (!window.casbot) {
 	window.casbot = {};
@@ -16,7 +16,7 @@ casbot.stack = function(site, stack, element) {
 		images
 	*/
 	if (stack.images && tag=='IMG' && element.src && element.src.toLowerCase().indexOf('.jpg')!=-1) {
-		var score = stack.i*10;
+		var score = stack.iteration*10;
 		score += $(element).width()||0;
 		if (!stack.x.images[element.src]) { // img must be unique per item
 			stack.x.images[element.src] = true;
@@ -30,7 +30,7 @@ casbot.stack = function(site, stack, element) {
 	if (stack.images && $(element).css('background-image') && $(element).css('background-image').toLowerCase().indexOf('.jpg')!=-1) {
 		var src = ($(element).css('background-image').match(/(?:url\()([^\)]+)[\)]/)||[])[1];
 		if (src) {
-			var score = stack.i*10;
+			var score = stack.iteration*10;
 			score += $(element).width()||0;
 			if (!stack.x.images[src]) { // img must be unique per item
 				stack.x.images[src] = true;
@@ -40,17 +40,24 @@ casbot.stack = function(site, stack, element) {
 	}
 
 	/*
+		ignore empty
+	*/
+	if (length < 10) {
+		return stack;
+	}
+
+	/*
 		links
 	*/
-	if (stack.links && tag == 'A' && element.href && element.href.length > 12) {
-		var score = stack.i*10;
+	if (stack.links && tag == 'A' && element.href && element.href.length >= 10) {
+		var score = stack.iteration*10;
 		if (element.href.indexOf(site.links)!=-1) {
 			score += 100;
 		} else if (element.href.indexOf('/')===0) {
 			score += 50;
 		}
 		stack.links[score] = element.href;
-		if (text.indexOf(site.links)!=-1) { // if text contains link url, it is not a title
+		if (length < 40 || text.indexOf(site.links)!=-1) { // if text contains link url, it is not a title ... if link is short, then its probably not the title either
 			return stack;
 		}
 	}
@@ -58,7 +65,7 @@ casbot.stack = function(site, stack, element) {
 	/*
 		dates
 	*/
-	if (stack.times && length > 8 && length < 44 && ( (text.match(/[0-9]/g)||'').length>=2 || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
+	if (stack.dates && length > 8 && length < 44 && ( (text.match(/[0-9]/g)||'').length>=2 || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
 		if (
 			/^(Now|Today|Next|Tomorrow)/i.test(text) || 
 			/[0-9][:]{1}[0-9]{2,}/.test(text) ||
@@ -67,8 +74,8 @@ casbot.stack = function(site, stack, element) {
 			/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(text) ||
 			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
-			var score = stack.i;
-			stack.times[score] = text;
+			var score = stack.iteration;
+			stack.dates[score] = text;
 			return stack;
 		}
 	}
@@ -77,7 +84,7 @@ casbot.stack = function(site, stack, element) {
 		texts
 	*/
 	if (stack.texts && text.length > 10) {
-		var score = stack.i*10;
+		var score = stack.iteration*10;
 		// social?
 		if (length < 80 && text.match(/(share|url|bookmark)/i)) {
 			return stack;
@@ -132,11 +139,12 @@ casbot.stack = function(site, stack, element) {
 			score += (100 - ((length-40)*2));
 		}
 		
-		stack.texts[score] = text;
+		if (score>0) {
+			stack.texts[score] = text;
+		}
+
 		return stack;
 	}
-
-	return stack;
 };
 
 

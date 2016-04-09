@@ -1,4 +1,4 @@
-console.log('# crawl.js');
+//console.log('# crawl.js');
 
 if (!window.casbot) {
 	window.casbot = {};
@@ -18,6 +18,7 @@ window.casbot.crawl = function(each) {
 	// item
 	if (elements) {
 		each.items = [];
+		var timeToday = Date.parse(Date.create('today'));
 		var i = 0;
 		elements.each(function() {
 			i++;
@@ -34,7 +35,7 @@ window.casbot.crawl = function(each) {
 			}
 			// date
 			if (each.site.selectors.date) {
-				item.times = [];
+				item.dates = [];
 				if (typeof each.site.selectors.date == 'string') {
 					each.site.selectors.date = {"0":each.site.selectors.date};
 				}
@@ -42,7 +43,7 @@ window.casbot.crawl = function(each) {
 					var elem = eval('$(this)'+each.site.selectors.date[c]);
 					if (elem) {
 						var date = elem.text().replace(/[\s]+/g, ' ').trim();
-						item.times.push(date);
+						item.dates.push(date);
 					}
 				}
 			}
@@ -61,29 +62,31 @@ window.casbot.crawl = function(each) {
 				>> stack - parse parent
 			*/
 			if (!item.texts) {
-				stack.texts = [];
+				stack.texts = {};
 				stack.x.texts = {};
 			}
-			if (!item.times) {
-				stack.times = [];
-				stack.x.times = {};
+			if (!item.dates) {
+				stack.times = {};
+				stack.dates = {};
+				stack.x.dates = {};
 			}
 			if (!item.links) {
-				stack.links = [];
+				stack.links = {};
 				stack.x.links = {};
 			}
 			if (!item.images) {
-				stack.images = [];
+				stack.images = {};
 				stack.x.images = {};
 				// images
 				var img = ($(this).html().match(/["']([^"]*.jpg)["']/i)||[])[1];
 				if (img) {
-					stack.images.push(img);
+					stack.images[100] = img;
 					stack.x.images[img] = true;
 				}
 			}
+			stack.iteration = 0;
 			$(this).find('*').reverse().each(function() {
-
+				stack.iteration++;
 				/*
 					>> stack - parse children
 				*/
@@ -93,105 +96,153 @@ window.casbot.crawl = function(each) {
 
 			///////////////////////////////////////////////////////////////////
 			// shuffle-cards (sort)
-			// title
+			// texts
 			if (!item.texts) {
 				for (var card in stack.texts) {
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
-					//console.log(card,stack.texts[card]);
 					var matches = [];
 					for (var c in stack.texts) {
-						// compare to everything higher than itself
-						if (parseInt(c) > parseInt(card)) {
-							// if current fits into anything higher, remove current
-							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.texts[c].indexOf(stack.texts[card]));
+						// compare to all others
+						if (parseInt(c) != parseInt(card)) {
+							// if current fits into anything higher, remove the longer one, it's probably the parent
 							if (stack.texts[c].indexOf(stack.texts[card]) != -1) {
-								delete stack.texts[card];
+								delete stack.texts[c];
 							}
 						}
 					}
 				}
-				stack.texts.reverse();
 			}
-			// date
-			if (!item.times) {
-				for (var card in stack.times) {
+			// dates / times
+			if (!item.dates) {
+				for (var card in stack.dates) {
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
-					//console.log(card,stack.texts[card]);
 					var matches = [];
-					for (var c in stack.times) {
-						// compare to everything higher than itself
-						if (parseInt(c) > parseInt(card)) {
-							// if current fits into anything higher, remove current
-							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.texts[c].indexOf(stack.texts[card]));
-							if (stack.times[c].indexOf(stack.times[card]) != -1) {
-								delete stack.times[card];
+					for (var c in stack.dates) {
+						// compare to all others
+						if (parseInt(c) != parseInt(card)) {
+							// if current fits into anything higher, remove the longer one, it's probably the parent
+							if (stack.dates[c].indexOf(stack.dates[card]) != -1) {
+								delete stack.dates[c];
+							}
+						}
+					}
+					// parse timestamp
+					var timestamp = Date.parse(Date.create(stack.dates[card]));
+					if (!timestamp) {
+						var strings = stack.dates[card].split(/—|-/);
+						for (var ea in strings) {
+							timestamp = Date.parse(Date.create(strings[ea]));
+							if (timestamp>timeToday) {
+								break;
+							}
+						}
+					}
+					// if less than now, ignore it!
+					if (timestamp >= timeToday) {
+						stack.times[timestamp] = timestamp;
+					}
+				}
+			}
+			// links
+			if (!item.links) {
+				for (var card in stack.links) {
+					// start from the lowest points (back of element)
+					// compare current value, to all others with higher points (front of element)
+					var matches = [];
+					for (var c in stack.links) {
+						// compare to all others
+						if (parseInt(c) != parseInt(card)) {
+							// if current fits into anything higher, remove the longer one, it's probably the parent
+							if (stack.links[c].indexOf(stack.links[card]) != -1) {
+								delete stack.links[c];
 							}
 						}
 					}
 				}
-				stack.texts.reverse();
 			}
-			// link
-			if (!item.links) {
-				stack.links.reverse();
-			}
-			// img
+			// images
 			if (!item.images) {
-				stack.images.reverse();
+				for (var card in stack.images) {
+					// start from the lowest points (back of element)
+					// compare current value, to all others with higher points (front of element)
+					var matches = [];
+					for (var c in stack.images) {
+						// compare to all others
+						if (parseInt(c) != parseInt(card)) {
+							// if current fits into anything higher, remove the longer one, it's probably the parent
+							if (stack.images[c].indexOf(stack.images[card]) != -1) {
+								delete stack.images[c];
+							}
+						}
+					}
+				}
 			}
+			console.log('# '+(JSON.stringify(stack,null,'\t')));
 
 			///////////////////////////////////////////////////////////////////
 			// play-card (add to item)
-			// title
+			// texts
 			if (!item.texts) {
 				item.texts = [];
-				for (var card in stack.texts) {
+				Object.keys(stack.texts).reverse().forEach(function(card){
 					if (stack.texts[card]) {
 						item.texts.push(stack.texts[card]);
 					}
-				}
+				});
 			}
-			// date
+			// dates
+			if (!item.dates) {
+				item.dates = [];
+				Object.keys(stack.dates).reverse().forEach(function(card){
+					if (stack.dates[card]) {
+						item.dates.push(stack.dates[card]);
+					}
+				});
+			}
+			// times
 			if (!item.times) {
 				item.times = [];
-				for (var card in stack.times) {
+				Object.keys(stack.times).sort().forEach(function(card){
 					if (stack.times[card]) {
 						item.times.push(stack.times[card]);
 					}
-				}
+				});
 			}
-			// link
+			// links
 			if (!item.links) {
 				item.links = [];
-				for (var card in stack.links) {
-					var link = stack.links[card];
-					// absolute
-					if (link.indexOf(each.site.host)==0) {
-						item.links.push(link);
-					}
-					// relative
-					if (/^\//.test(link)) {
-						// maybe
-						item.links.push(each.site.host+link);
-					} else if (link.length > 10 && !item.links) {
-						// last resort
-						item.links.push(each.site.host+'/'+link);
-					}
+				if (stack.links.length<=3) {
+					Object.keys(stack.links).reverse().forEach(function(card){
+						var link = stack.links[card];
+						// absolute
+						if (link.indexOf(each.site.host)==0) {
+							item.links.push(link);
+						}
+						// relative
+						if (/^\//.test(link)) {
+							// maybe
+							item.links.push(each.site.host+link);
+						} else if (link.length > 10 && !item.links) {
+							// last resort
+							item.links.push(each.site.host+'/'+link);
+						}
+					});
 				}
 			}
-			// img
+			// images
 			if (!item.images) {
 				item.images = [];
-				for (var card in stack.images) {
+				Object.keys(stack.images).reverse().forEach(function(card){
 					var img = stack.images[card];
 					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
 						img = each.site.host + img;
 						item.images.push(img);
 					}
-				}
+				});
 			}
+			console.log('## '+(JSON.stringify(item,null,'\t')));
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
@@ -202,7 +253,7 @@ window.casbot.crawl = function(each) {
 			///////////////////////////////////////////////////////////////////
 			// SCORE
 			if (!item.texts[0]) {
-				return true;
+				return each;
 			}
 			if (!item.links[0] || item.links.length>3) {
 				item.score -= 1;
@@ -210,11 +261,11 @@ window.casbot.crawl = function(each) {
 			if (!item.images[0]) {
 				item.score -= 1;
 			}
-			if (item.times[0]) {
+			if (item.dates[0]) {
 				item.score += 1;
 			}
 			if (item.score < 100) { // discard if missing both image and link
-				return true;
+				return each;
 			}
 
 			///////////////////////////////////////////////////////////////////
