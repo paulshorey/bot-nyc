@@ -15,20 +15,6 @@
 	CONFIG.path_root.pop();
 	CONFIG.path_root = CONFIG.path_root.join('/');
 
-	var POSTER = require('casper').create({
-		waitTimeout: 10000,
-		stepTimeout: 1000,
-		retryTimeout: 100,
-		verbose: true,
-		exitOnError: false,
-		onWaitTimeout: function(timeout, step) {
-		},
-		onStepTimeout: function(timeout, step) {
-		},
-		onResourceReceived: function(timeout, step) {
-		},
-	});
-
 	var CASPER = require('casper').create({
 		waitTimeout: 10000,
 		stepTimeout: 1000,
@@ -175,9 +161,50 @@
 
 
 /*
-	3. SAVE
+	4. POST
 */
 var BOT = {};
+BOT.post = function(url, data) {
+
+	var POSTER = require('casper').create({
+		waitTimeout: 10000,
+		stepTimeout: 1000,
+		retryTimeout: 100,
+		verbose: true,
+		exitOnError: false,
+		onWaitTimeout: function(timeout, step) {
+		},
+		onStepTimeout: function(timeout, step) {
+		},
+		onResourceReceived: function(timeout, step) {
+		},
+	});
+	POSTER.start();
+	POSTER.thenOpen(url, {
+		method: 'post',
+		data: JSON.stringify(data, null, '\t'),
+		headers: {
+			'Content-type': 'application/json'
+		}
+	}, function(headers) {
+
+		POSTER.waitFor(function() {
+			return POSTER.evaluate(function() {
+				window.console.log('## POSTED to /site');
+				return true;
+			});
+		});
+		CASPER.console.info('POSTED to /site');
+
+	});
+	POSTER.run();
+
+}
+
+
+/*
+	3. SAVE
+*/
 BOT.save = function(error) {
 
 	CASPER.console.info('Found '+(EACH.items?EACH.items.length||0:0)+' items');
@@ -189,10 +216,12 @@ BOT.save = function(error) {
 		var post = {items:[]};
 		for (var it in EACH.items) {
 			// MODEL
+			// raw
+			CASPER.console.warn(JSON.stringify(EACH.items[it],null,'\t'));
 			// set
 			var item = {};
-				item.date = EACH.items[it].date[0];
-				item.text = EACH.items[it].title[0];
+				item.text = EACH.items[it].text[0];
+				item.link = EACH.items[it].link[0] || EACH.site.link;
 				item.time = Date.now();
 				item.site = {};
 				item.site.link = EACH.site.link;
@@ -201,22 +230,12 @@ BOT.save = function(error) {
 			if (item.text && item.date) {
 				item.text = item.text.replace(item.date,'');
 			}
+			CASPER.console.info(JSON.stringify(item,null,'\t'));
 			// save
 			post.items.push(item);
-			CASPER.console.info(item.text);
 		}
 		// post
-		POSTER.start();
-		POSTER.thenOpen(CONFIG.api_host+'/items', {
-			method: 'post',
-			data: JSON.stringify(post, null, '\t'),
-			headers: {
-				'Content-type': 'application/json'
-			}
-		}, function(headers) {
-			CASPER.console.info('POSTED to /site');
-		});
-		POSTER.run();
+		BOT.post(CONFIG.api_host+'/items', post);
 
 		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
 	} else {
@@ -237,16 +256,15 @@ BOT.wait = function(){
 	}
 	EACH.waited++;
 
-	// go
-	CASPER.wait(1000);
+	// start
 	CASPER.waitFor(function() {
 
-		// parsed
+		// parse
 		var parsed = CASPER.evaluate(function(EACH) {
 			return window.casbot.haunt(EACH);
 		},EACH);
 
-		// EACH.items
+		// ADD items
 		if (parsed && parsed.items && parsed.items.length) {
 			EACH.items = parsed.items;
 			return true;
@@ -256,6 +274,7 @@ BOT.wait = function(){
 
 		// SAVE items
 		BOT.save(data);
+		CASPER.wait(2000);
 
 		// MORE items
 		if (EACH.site.elements.more) {
@@ -266,7 +285,7 @@ BOT.wait = function(){
 		}
 		
 	}, function(data) {
-		BOT.save(data);
+		CASPER.console.error('BOT.wait: '+EACH.waited);
 	}, 
 	30000 );
 

@@ -42,8 +42,8 @@ window.casbot.haunt = function(EACH) {
 			///////////////////////////////////////////////////////////////////
 			// img // better to get automatically
 			// title
-			if (EACH.site.elements.title) {
-				item.title = [];
+			if (EACH.site.elements.text) {
+				item.text = [];
 			}
 			// date
 			if (EACH.site.elements.date) {
@@ -70,9 +70,9 @@ window.casbot.haunt = function(EACH) {
 			///////////////////////////////////////////////////////////////////
 			// stack-cards (parse)
 			var stack = {x:{}};
-			if (!item.title) {
-				stack.title = [];
-				stack.x.title = {};
+			if (!item.text) {
+				stack.text = [];
+				stack.x.text = {};
 			}
 			if (!item.date) {
 				stack.date = [];
@@ -103,44 +103,44 @@ window.casbot.haunt = function(EACH) {
 			///////////////////////////////////////////////////////////////////
 			// shuffle-cards (sort)
 			// title
-			if (!item.title) {
-				for (var card in stack.title) {
+			if (!item.text) {
+				for (var card in stack.text) {
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
-					//console.log(card,stack.title[card]);
+					//console.log(card,stack.text[card]);
 					var matches = [];
-					for (var c in stack.title) {
+					for (var c in stack.text) {
 						// compare to everything higher than itself
 						if (parseInt(c) > parseInt(card)) {
 							// if current fits into anything higher, remove current
-							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
-							if (stack.title[c].indexOf(stack.title[card]) != -1) {
-								delete stack.title[card];
+							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.text[c].indexOf(stack.text[card]));
+							if (stack.text[c].indexOf(stack.text[card]) != -1) {
+								delete stack.text[card];
 							}
 						}
 					}
 				}
-				stack.title.reverse();
+				stack.text.reverse();
 			}
 			// date
 			if (!item.date) {
 				for (var card in stack.date) {
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
-					//console.log(card,stack.title[card]);
+					//console.log(card,stack.text[card]);
 					var matches = [];
 					for (var c in stack.date) {
 						// compare to everything higher than itself
 						if (parseInt(c) > parseInt(card)) {
 							// if current fits into anything higher, remove current
-							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.title[c].indexOf(stack.title[card]));
+							//console.log(parseInt(card) +' inside'+ parseInt(c) +' ? ' + stack.text[c].indexOf(stack.text[card]));
 							if (stack.date[c].indexOf(stack.date[card]) != -1) {
 								delete stack.date[card];
 							}
 						}
 					}
 				}
-				stack.title.reverse();
+				stack.text.reverse();
 			}
 			// link
 			if (!item.link) {
@@ -154,11 +154,11 @@ window.casbot.haunt = function(EACH) {
 			///////////////////////////////////////////////////////////////////
 			// play-card (add to item)
 			// title
-			if (!item.title) {
-				item.title = [];
-				for (var card in stack.title) {
-					if (stack.title[card]) {
-						item.title.push(stack.title[card]);
+			if (!item.text) {
+				item.text = [];
+				for (var card in stack.text) {
+					if (stack.text[card]) {
+						item.text.push(stack.text[card]);
 					}
 				}
 			}
@@ -210,7 +210,7 @@ window.casbot.haunt = function(EACH) {
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// SCORE
-			if (!item.title[0]) {
+			if (!item.text[0]) {
 				return true;
 			}
 			if (!item.link[0] || item.link.length>3) {

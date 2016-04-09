@@ -251,7 +251,7 @@ pp.parseStack = function(site, stack, element) {
 	}
 
 	// title
-	if (stack.title && text.length > 10) {
+	if (stack.text && text.length > 10) {
 		var score = stack.i*10;
 		// social?
 		if (length < 80 && text.match(/(Twitter|Facebook|Google|Tumblr|Share|URL)/i)) {
@@ -307,7 +307,7 @@ pp.parseStack = function(site, stack, element) {
 			score += (100 - ((length-40)*2));
 		}
 		
-		stack.title[score] = text;
+		stack.text[score] = text;
 		return stack;
 	}
 
