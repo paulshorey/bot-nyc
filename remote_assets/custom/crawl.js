@@ -216,7 +216,7 @@ window.casbot.crawl = function(each) {
 				for (var k in keys) {
 					var card = keys[k];
 					if (stack.texts[card]) {
-						item.texts.push(stack.texts[card]);
+						item.texts.push(unescape(encodeURIComponent(stack.texts[card]));
 					}
 				}
 			}
@@ -227,7 +227,7 @@ window.casbot.crawl = function(each) {
 				for (var k in keys) {
 					var card = keys[k];
 					if (stack.dates[card]) {
-						item.dates.push(stack.dates[card]);
+						item.dates.push(unescape(encodeURIComponent(stack.dates[card]));
 					}
 				}
 			}
