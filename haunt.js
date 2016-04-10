@@ -69,6 +69,11 @@
 	});
 	CASPER.on('remote.message', function(msg, etc) {
 		// ignore site's console.logs, only show ours
+		if (msg.substr(0,3)=='###') {
+			msg = msg.substr(4);
+			CASPER.console.warn('		' + msg, 'error');
+		}
+		// ignore site's console.logs, only show ours
 		if (msg.substr(0,2)=='##') {
 			msg = msg.substr(3);
 			CASPER.console.info('		' + msg, 'error');
@@ -287,12 +292,12 @@ BOT.wait = function(){
 		CASPER.wait(1000);
 
 		// MORE items
-		// if (EACH.selectors.more) {
-		// 	CASPER.console.log('more = "'+EACH.selectors.more+'"');
-		// 	CASPER.thenClick(EACH.selectors.more, function(){
-		// 		BOT.wait();
-		// 	});
-		// }
+		if (EACH.selectors.more) {
+			CASPER.console.log('more = "'+EACH.selectors.more+'"');
+			CASPER.thenClick(EACH.selectors.more, function(){
+				BOT.wait();
+			});
+		}
 		
 	}, function(data) {
 		CASPER.console.error('BOT.wait: '+EACH.waited);

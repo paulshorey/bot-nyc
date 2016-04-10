@@ -94,56 +94,87 @@ window.casbot.crawl = function(each) {
 				stack = casbot.stack(each.site, stack, this);
 
 			});
+			if (DEBUG) {
+				console.log('# '+(JSON.stringify(stack,null,'\t')));
+			}
 
 			///////////////////////////////////////////////////////////////////
 			// shuffle-cards (sort)
 			// texts
 			if (!item.texts) {
-				for (var card in stack.texts) {
+				var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending
+				keys.reverse().forEach(function(card){
+					if (!stack.texts[card]) {
+						return;
+					};
+					console.log('### '+card);
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];
-					for (var c in stack.texts) {
-						// compare to all others
-						if (parseInt(c) != parseInt(card)) {
-							// if current fits into anything higher, remove the longer one, it's probably the parent
-							if (stack.texts[c].indexOf(stack.texts[card]) != -1) {
+					keys.forEach(function(c){
+						if (!stack.texts[c]) {
+							return;
+						};
+						// compare
+						if (card > c) {
+							if (stack.texts[c] == stack.texts[card]) {
+								// if same, keep higher score
+								delete stack.texts[c];
+							} else if (stack.texts[c].indexOf(stack.texts[card]) != -1) {
+								// if current fits into another, remove the longer string, it's probably the parent
 								delete stack.texts[c];
 							}
 						}
-					}
-				}
+					});
+				});
 			}
-			// dates / times
+			// dates
 			if (!item.dates) {
-				for (var card in stack.dates) {
-					stack.dates[card] = stack.dates[card].toLowerCase();
+				var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+				for (var k in keys) {
+					var card = keys[k];
+					if (!stack.dates[card]) {
+						break;
+					}
+					stack.dates[card] = stack.dates[card].toUpperCase();
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];
 					for (var c in stack.dates) {
 						// compare to all others
 						if (parseInt(c) != parseInt(card)) {
-							// if current fits into anything higher, remove the longer one, it's probably the parent
-							if (stack.dates[c].indexOf(stack.dates[card]) != -1) {
+							// if current fits into another, remove the longer string, it's probably the parent
+							if (stack.dates[c].toUpperCase().indexOf(stack.dates[card]) != -1) {
 								delete stack.dates[c];
 							}
 						}
 					}
-					// parse timestamp
+				}
+			}
+			// times
+			var timeIteration = 0;
+			if (!item.dates) {
+				timeIteration++;
+				var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+				for (var k in keys) {
+					var card = keys[k];
+					if (!stack.dates[card]) {
+						break;
+					}
 					var timestamp = Date.parse(Date.create(stack.dates[card]));
 					if (!timestamp) {
-						var strings = stack.dates[card].split(/—|-|\ to\ /);
+						var delimiters = /—|-|\ to\ |\(|\)/;
+						var strings = stack.dates[card].split(delimiters);
 						for (var ea in strings) {
 							timestamp = Date.parse(Date.create(strings[ea]));
 							if (timestamp>timeToday) {
-								timestamp += 1000;
+								timestamp;
 								break;
 							}
 						}
 					}
 					if (timestamp >= timeToday) {
-						stack.times[timestamp] = timestamp;
+						stack.times[timestamp+timeIteration] = timestamp;
 						break;
 					}
 					// try removing last word
@@ -162,7 +193,7 @@ window.casbot.crawl = function(each) {
 							// 
 							timestamp = Date.parse(Date.create(string));
 							if (timestamp>=timeToday) {
-								stack.times[timestamp] = timestamp + 1000;
+								stack.times[timestamp+timeIteration] = timestamp;
 								break;
 							}
 						}
@@ -171,16 +202,21 @@ window.casbot.crawl = function(each) {
 			}
 			// links
 			if (!item.links) {
-				for (var card in stack.links) {
+				var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+				for (var k in keys) {
+					var card = keys[k];
+					if (!stack.links[card]) {
+						break;
+					}
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];
 					for (var c in stack.links) {
 						// compare to all others
 						if (parseInt(c) != parseInt(card)) {
-							// if current fits into anything higher, remove the longer one, it's probably the parent
+							// if current fits into anything higher, remove the shorter one, it's probably incomplete
 							if (stack.links[c].indexOf(stack.links[card]) != -1) {
-								delete stack.links[c];
+								delete stack.links[card];
 							}
 						}
 					}
@@ -188,23 +224,25 @@ window.casbot.crawl = function(each) {
 			}
 			// images
 			if (!item.images) {
-				for (var card in stack.images) {
+				var keys = Object.keys(stack.images).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+				for (var k in keys) {
+					var card = keys[k];
+					if (!stack.images[card]) {
+						break;
+					}
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];
 					for (var c in stack.images) {
 						// compare to all others
 						if (parseInt(c) != parseInt(card)) {
-							// if current fits into anything higher, remove the longer one, it's probably the parent
+							// if current fits into anything higher, remove the shorter one, it's probably incomplete
 							if (stack.images[c].indexOf(stack.images[card]) != -1) {
-								delete stack.images[c];
+								delete stack.images[card];
 							}
 						}
 					}
 				}
-			}
-			if (DEBUG) {
-				console.log('# '+(JSON.stringify(stack,null,'\t')));
 			}
 
 			///////////////////////////////////////////////////////////////////
@@ -212,29 +250,30 @@ window.casbot.crawl = function(each) {
 			// texts
 			if (!item.texts) {
 				item.texts = [];
-				var keys = Object.keys(stack.texts).reverse();
+				var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
 				for (var k in keys) {
 					var card = keys[k];
 					if (stack.texts[card]) {
-						item.texts.push(unescape(encodeURIComponent(stack.texts[card]));
+						item.texts.push(unescape(encodeURIComponent(stack.texts[card])));
 					}
 				}
 			}
 			// dates
 			if (!item.dates) {
 				item.dates = [];
-				var keys = Object.keys(stack.dates).reverse();
+				var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
 				for (var k in keys) {
 					var card = keys[k];
 					if (stack.dates[card]) {
-						item.dates.push(unescape(encodeURIComponent(stack.dates[card]));
+						stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
+						item.dates.push(unescape(encodeURIComponent(stack.dates[card].trim())));
 					}
 				}
 			}
 			// times
 			if (!item.times) {
 				item.times = [];
-				var keys = Object.keys(stack.times).sort();
+				var keys = Object.keys(stack.times).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending: prefer lower date, because they are all high enough
 				for (var k in keys) {
 					var card = keys[k];
 					if (stack.times[card]) {
@@ -245,21 +284,23 @@ window.casbot.crawl = function(each) {
 			// links
 			if (!item.links) {
 				item.links = [];
-				if (Object.keys(stack.links).length<=3) {
-					var keys = Object.keys(stack.links).reverse();
+				if (Object.keys(stack.links).length<=6) {
+					var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
 					for (var k in keys) {
 						var card = keys[k];
 						var link = stack.links[card];
 						// absolute
-						if (link.indexOf(each.site.host)==0) {
+						if (link.indexOf(each.site.host)===0) {
 							item.links.push(link);
-						}
+						// other site (not allow ??)
+						} else if (link.substring(0,4)=='http') {
+							//item.links.push(link);
+						} else if (link.substring(0,3)=='www') {
+							//item.links.push('http://'+link);
 						// relative
-						if (/^\//.test(link)) {
-							// maybe
+						} else if (link.substring(0,1)=='/') {
 							item.links.push(each.site.host+link);
-						} else if (link.length > 10 && !item.links) {
-							// last resort
+						} else {
 							item.links.push(each.site.host+'/'+link);
 						}
 					}
@@ -268,14 +309,14 @@ window.casbot.crawl = function(each) {
 			// images
 			if (!item.images) {
 				item.images = [];
-				var keys = Object.keys(stack.images).reverse();
+				var keys = Object.keys(stack.images).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
 				for (var k in keys) {
 					var card = keys[k];
 					var img = stack.images[card];
 					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
-						img = each.site.host + img;
-						item.images.push(img);
+						img = each.site.host+img;
 					}
+					item.images.push(img);
 				}
 			}
 
@@ -302,7 +343,7 @@ window.casbot.crawl = function(each) {
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
-			// DEBUG
+			// CONSOLE
 			if (DEBUG) {
 				console.log('## '+(JSON.stringify(item,null,'\t')));
 			}
@@ -320,8 +361,9 @@ window.casbot.crawl = function(each) {
 	// more items
 	if (each.items.length) {
 		if (each.site.selectors.more) {
-			// manual selector
-			if ($(each.site.selectors.more).length) {
+			// more selector
+			if ($(each.site.selectors.more).length && !/disabled|active|selected/.test($(each.site.selectors.more).get(0).outerHTML)) {
+				// still has link
 				each.selectors.more = each.site.selectors.more;
 			} else {
 				// no more
