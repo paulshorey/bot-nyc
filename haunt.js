@@ -185,8 +185,9 @@ BOT.post = function(url, data) {
 	POSTER.thenOpen(url, {
 		method: 'post',
 		data: JSON.stringify(data, null, '\t'),
+		encoding: 'utf8',
 		headers: {
-			'Content-type': 'application/json'
+			'Content-type': 'application/json; charset=utf-8'
 		}
 	}, function(headers) {
 
@@ -230,6 +231,7 @@ BOT.save = function(error) {
 				if (its.texts[2]) {
 					item.text += '<br />'+its.texts[2];
 				}
+				item.text = unescape(encodeURIComponent(item.text));
 				item.link = its.links[0] || EACH.site.link;
 				item.time = its.times[0];
 				item.site = {};
