@@ -9,7 +9,7 @@ casbot.stack = function(site, stack, element) {
 	if (tag=='SCRIPT' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
 		return stack;
 	}
-	var text = element.innerText.replace(/[\s]+/g, ' ').trim()
+	var text = element.innerText.replace(/[\s]+/g, ' ').trim()+' ';
 	var length = text.length;
 
 	/*
@@ -40,13 +40,6 @@ casbot.stack = function(site, stack, element) {
 	}
 
 	/*
-		ignore empty
-	*/
-	if (length < 10) {
-		return stack;
-	}
-
-	/*
 		links
 	*/
 	if (stack.links && tag == 'A' && element.href && element.href.length >= 10) {
@@ -60,6 +53,13 @@ casbot.stack = function(site, stack, element) {
 		if (length < 40 || text.indexOf(site.links)!=-1) { // if text contains link url, it is not a title ... if link is short, then its probably not the title either
 			return stack;
 		}
+	}
+
+	/*
+		ignore empty
+	*/
+	if (length < 10) {
+		return stack;
 	}
 
 	/*
@@ -117,15 +117,15 @@ casbot.stack = function(site, stack, element) {
 				break;
 		}
 		// UPPER case prefered
-		var upp = (text.substr(0,50).match(/[A-Z]/g)||'').length||0;
-		var low = (text.substr(0,100).match(/[^A-Z]/g)||'').length||0;
-		if (upp > low) {
-			var x = 10;
-			if (length > 10 && length < 50) {
-				x = 50 - length;
-			}
-			score += (upp - low) * x;
-		}
+		// var upp = (text.substr(0,50).match(/[A-Z]/g)||'').length||0;
+		// var low = (text.substr(0,100).match(/[^A-Z]/g)||'').length||0;
+		// if (upp > low) {
+		// 	var x = 10;
+		// 	if (length > 10 && length < 50) {
+		// 		x = 50 - length;
+		// 	}
+		// 	score += (upp - low) * x;
+		// }
 		// shorter is better
 		if (length > 10 && length < 100) {
 			score += 100 - length;
@@ -140,11 +140,13 @@ casbot.stack = function(site, stack, element) {
 		}
 		
 		if (score>0) {
-			stack.texts[score] = text;
+			stack.texts[score] = text.trim();
 		}
 
 		return stack;
 	}
+
+	return stack;
 };
 
 

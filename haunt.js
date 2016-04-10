@@ -224,6 +224,12 @@ BOT.save = function(error) {
 			// item
 			var item = {};
 				item.text = its.texts[0];
+				if (its.texts[1]) {
+					item.text += '<br />'+its.texts[1];
+				}
+				if (its.texts[2]) {
+					item.text += '<br />'+its.texts[2];
+				}
 				item.link = its.links[0] || EACH.site.link;
 				item.time = its.times[0];
 				item.site = {};
@@ -290,7 +296,7 @@ BOT.wait = function(){
 	}, function(data) {
 		CASPER.console.error('BOT.wait: '+EACH.waited);
 	}, 
-	30000 );
+	11000 );
 
 };
 

@@ -1,4 +1,5 @@
 //console.log('# crawl.js');
+window.DEBUG = true;
 
 if (!window.casbot) {
 	window.casbot = {};
@@ -85,7 +86,7 @@ window.casbot.crawl = function(each) {
 				}
 			}
 			stack.iteration = 0;
-			$(this).find('*').reverse().each(function() {
+			$($(this).find('*').get().reverse()).each(function() {
 				stack.iteration++;
 				/*
 					>> stack - parse children
@@ -116,6 +117,7 @@ window.casbot.crawl = function(each) {
 			// dates / times
 			if (!item.dates) {
 				for (var card in stack.dates) {
+					stack.dates[card] = stack.dates[card].toLowerCase();
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];
@@ -131,17 +133,39 @@ window.casbot.crawl = function(each) {
 					// parse timestamp
 					var timestamp = Date.parse(Date.create(stack.dates[card]));
 					if (!timestamp) {
-						var strings = stack.dates[card].split(/—|-/);
+						var strings = stack.dates[card].split(/—|-|\ to\ /);
 						for (var ea in strings) {
 							timestamp = Date.parse(Date.create(strings[ea]));
 							if (timestamp>timeToday) {
+								timestamp += 1000;
 								break;
 							}
 						}
 					}
-					// if less than now, ignore it!
 					if (timestamp >= timeToday) {
 						stack.times[timestamp] = timestamp;
+						break;
+					}
+					// try removing last word
+					if (!timestamp) {
+						var strings = stack.dates[card].split(/\ |,|\'|\"/);
+						for (var ea in strings) {
+							// this should be a recursive function
+							strings.pop();
+							var string = strings.join(' ');
+							//
+							if (string == 'now') {
+								timestamp = timeToday;
+								stack.times[timestamp] = timestamp;
+								break;
+							}
+							// 
+							timestamp = Date.parse(Date.create(string));
+							if (timestamp>=timeToday) {
+								stack.times[timestamp] = timestamp + 1000;
+								break;
+							}
+						}
 					}
 				}
 			}
@@ -179,42 +203,52 @@ window.casbot.crawl = function(each) {
 					}
 				}
 			}
-			console.log('# '+(JSON.stringify(stack,null,'\t')));
+			if (DEBUG) {
+				console.log('# '+(JSON.stringify(stack,null,'\t')));
+			}
 
 			///////////////////////////////////////////////////////////////////
 			// play-card (add to item)
 			// texts
 			if (!item.texts) {
 				item.texts = [];
-				Object.keys(stack.texts).reverse().forEach(function(card){
+				var keys = Object.keys(stack.texts).reverse();
+				for (var k in keys) {
+					var card = keys[k];
 					if (stack.texts[card]) {
 						item.texts.push(stack.texts[card]);
 					}
-				});
+				}
 			}
 			// dates
 			if (!item.dates) {
 				item.dates = [];
-				Object.keys(stack.dates).reverse().forEach(function(card){
+				var keys = Object.keys(stack.dates).reverse();
+				for (var k in keys) {
+					var card = keys[k];
 					if (stack.dates[card]) {
 						item.dates.push(stack.dates[card]);
 					}
-				});
+				}
 			}
 			// times
 			if (!item.times) {
 				item.times = [];
-				Object.keys(stack.times).sort().forEach(function(card){
+				var keys = Object.keys(stack.times).sort();
+				for (var k in keys) {
+					var card = keys[k];
 					if (stack.times[card]) {
 						item.times.push(stack.times[card]);
 					}
-				});
+				}
 			}
 			// links
 			if (!item.links) {
 				item.links = [];
-				if (stack.links.length<=3) {
-					Object.keys(stack.links).reverse().forEach(function(card){
+				if (Object.keys(stack.links).length<=3) {
+					var keys = Object.keys(stack.links).reverse();
+					for (var k in keys) {
+						var card = keys[k];
 						var link = stack.links[card];
 						// absolute
 						if (link.indexOf(each.site.host)==0) {
@@ -228,21 +262,22 @@ window.casbot.crawl = function(each) {
 							// last resort
 							item.links.push(each.site.host+'/'+link);
 						}
-					});
+					}
 				}
 			}
 			// images
 			if (!item.images) {
 				item.images = [];
-				Object.keys(stack.images).reverse().forEach(function(card){
+				var keys = Object.keys(stack.images).reverse();
+				for (var k in keys) {
+					var card = keys[k];
 					var img = stack.images[card];
 					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
 						img = each.site.host + img;
 						item.images.push(img);
 					}
-				});
+				}
 			}
-			console.log('## '+(JSON.stringify(item,null,'\t')));
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
@@ -253,9 +288,9 @@ window.casbot.crawl = function(each) {
 			///////////////////////////////////////////////////////////////////
 			// SCORE
 			if (!item.texts[0]) {
-				return each;
+				item.score = 0;
 			}
-			if (!item.links[0] || item.links.length>3) {
+			if (!item.links[0] || item.links.length>5) {
 				item.score -= 1;
 			}
 			if (!item.images[0]) {
@@ -264,14 +299,20 @@ window.casbot.crawl = function(each) {
 			if (item.dates[0]) {
 				item.score += 1;
 			}
-			if (item.score < 100) { // discard if missing both image and link
-				return each;
+
+			///////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////
+			// DEBUG
+			if (DEBUG) {
+				console.log('## '+(JSON.stringify(item,null,'\t')));
 			}
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// DONE
-			each.items.push(item);
+			if (item.score >= 100) {
+				each.items.push(item);
+			}
 			
 		});
 	}
