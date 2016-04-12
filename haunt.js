@@ -6,7 +6,8 @@
 	var FUN = require('./node_custom/fun.js');
 
 	var CONFIG = {
-		"api_host": 'http://localhost:1080', //'http://api.allevents.nyc',
+		//"api_host": 'http://localhost:1080',
+		"api_host": 'http://api.allevents.nyc',
 		"path_root": '',
 		"port":80,
 		"iteration":0
