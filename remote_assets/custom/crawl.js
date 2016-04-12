@@ -355,6 +355,9 @@ window.casbot.crawl = function(each) {
 				each.items.push(item);
 			}
 			
+			// CLEANUP
+			$(this).remove();
+
 		});
 	}
 
