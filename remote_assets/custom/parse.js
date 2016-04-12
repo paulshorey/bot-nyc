@@ -5,12 +5,19 @@ if (!window.casbot) {
 }
 
 casbot.stack = function(site, stack, element) {
+	/*
+		filter
+	*/
 	var tag = element.tagName;
 	if ( (tag.length==1 && tag!='A') || tag=='SPAN' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
 		return stack;
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
 	var length = text.length;
+	if (/Google Map/i.test(text)) {
+		$(element).remove();
+		return stack;
+	}
 
 	/*
 		images
@@ -43,6 +50,11 @@ casbot.stack = function(site, stack, element) {
 		links
 	*/
 	if (stack.links && tag == 'A' && element.href && element.href.length >= 10) {
+		if (/\/ical/.test(element.href)) {
+			$(element).remove();
+			return stack;
+		}
+
 		var score = stack.iteration*66;
 		if (element.href.indexOf(site.links)!=-1) {
 			score += 100;

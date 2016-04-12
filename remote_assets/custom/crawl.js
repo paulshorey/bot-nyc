@@ -203,13 +203,6 @@ window.casbot.crawl = function(each) {
 			// links
 			if (!item.links) {
 				for (var card in stack.links) {
-					// ignore calendar and social buttons
-					if (/\/ical/.test(stack.links[card])) {
-						delete stack.links[card];
-						break;
-					}
-				}
-				for (var card in stack.links) {
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];

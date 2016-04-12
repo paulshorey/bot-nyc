@@ -6,8 +6,8 @@
 	var FUN = require('./node_custom/fun.js');
 
 	var CONFIG = {
-		//"api_host": 'http://localhost:1080',
-		"api_host": 'http://api.allevents.nyc',
+		"api_host": 'http://localhost:1080',
+		//"api_host": 'http://api.allevents.nyc',
 		"path_root": '',
 		"port":80,
 		"iteration":0
@@ -167,7 +167,7 @@
 	}
 
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
-
+	CASPER.console.log(CASPER.cli.options);
 
 /*
 	4. POST
