@@ -6,10 +6,10 @@ if (!window.casbot) {
 
 casbot.stack = function(site, stack, element) {
 	var tag = element.tagName;
-	if (tag=='SCRIPT' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
+	if ( (tag.length==1 && tag!='A') || tag=='SPAN' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
 		return stack;
 	}
-	var text = element.innerText.replace(/[\s]+/g, ' ').trim();
+	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
 	var length = text.length;
 
 	/*
@@ -78,6 +78,7 @@ casbot.stack = function(site, stack, element) {
 		) {
 			var score = stack.iteration;
 			stack.dates[score] = text;
+			$(element).remove();
 			return stack;
 		}
 	}
@@ -141,21 +142,21 @@ casbot.stack = function(site, stack, element) {
 				score = score * length/15;
 			}
 		}
-		// 40 perfect, 20-90 ok
-		if (length == 50) {
-			score += 100;
-		} else if (length > 20 && length < 40) {
-			score += (length-20)*5;
-		} else if (length > 40 && length < 90) {
-			score += (100 - ((length-40)*2));
-		}
+		// 50 chars is perfect
+		// if (length < 50) {
+		// 	score += length * 10;
+		// } else if (length >= 50 && length < 550) {
+		// 	score += 550 - length;
+		// }
 		
+		// assign
 		if (score>0) {
 			score = Math.ceil(score);
-			stack.texts[score] = text.trim();
+			stack.texts[score] = uu.trim(text);
 		}
 
 		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
+		$(element).remove();
 		return stack;
 	}
 

@@ -1,4 +1,4 @@
-exports.url_uid = function(str) {
+exports.str_uid = function(str) {
 	// simple
 	str = str.replace(/[^A-Za-z0-9]/g, '');
 	// unique
@@ -12,10 +12,10 @@ exports.url_uid = function(str) {
 		hash = hash & hash; // Convert to 32bit integer
 	}
 	// ok
-	return str + hash;
+	return str.substr(0,40) + hash;
 };
 
-exports.make_uid = function(length) {
+exports.random_uid = function(length) {
 	length = parseInt(length);
 	if (!length) {
 		length = 11;
@@ -28,47 +28,6 @@ exports.make_uid = function(length) {
 		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	}
 	return text;
-};
-
-exports.stringify_once = function(obj, replacer, indent) {
-	var printedObjects = [];
-	var printedObjectKeys = [];
-
-	function printOnceReplacer(key, value) {
-		if (printedObjects.length > 2000) { // browsers will not print more than 20K, I don't see the point to allow 2K.. algorithm will not be fast anyway if we have too many objects
-			return 'object too long';
-		}
-		var printedObjIndex = false;
-		printedObjects.forEach(function(obj, index) {
-			if (obj === value) {
-				printedObjIndex = index;
-			}
-		});
-
-		if (key === '') { //root element
-			printedObjects.push(obj);
-			printedObjectKeys.push("root");
-			return value;
-		} else if (printedObjIndex + "" != "false" && typeof(value) == "object") {
-			if (printedObjectKeys[printedObjIndex] == "root") {
-				return "(pointer to root)";
-			} else {
-				return "(see " + ((!!value && !!value.constructor) ? value.constructor.name.toLowerCase() : typeof(value)) + " with key " + printedObjectKeys[printedObjIndex] + ")";
-			}
-		} else {
-
-			var qualifiedKey = key || "(empty key)";
-			printedObjects.push(value);
-			printedObjectKeys.push(qualifiedKey);
-			if (replacer) {
-				return replacer(key, value);
-			} else {
-				return value;
-			}
-		}
-	}
-	var stringified = JSON.stringify(obj, printOnceReplacer, indent);
-	return stringified;
 };
 
 exports.to_query_string = function(obj) {

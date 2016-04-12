@@ -3,33 +3,50 @@
 */
 var uu = new Object();
 
-// Not sure if this just removes special characters, or actually makes a hash
-// uu.str_id = function(str) {
-// 	// unique
-// 	var hash = 0;
-// 	if (str.length == 0) {
-// 		return hash;
-// 	}
-// 	for (i = 0; i < str.length; i++) {
-// 		char = str.charCodeAt(i);
-// 		hash = ((hash << 5) - hash) + char;
-// 		hash = hash & hash; // Convert to 32bit integer
-// 	}
-// 	// ok
-// 	return hash;
-// };
+// unique id from string
+uu.str_uid = function(str) {
+	// simple
+	str = str.replace(/[^A-Za-z0-9]/g, '');
+	// unique
+	var hash = 0;
+	if (str.length == 0) {
+		return hash;
+	}
+	for (i = 0; i < str.length; i++) {
+		char = str.charCodeAt(i);
+		hash = ((hash << 5) - hash) + char;
+		hash = hash & hash; // Convert to 32bit integer
+	}
+	// ok
+	return str.substr(0,30) + hash;
+};
 
-// Dom<->Html (not quite ready)
-// html2dom = function(html) {
-// 	var parser = new DOMParser();
-// 	return parser.parseFromString(html, "text/html");
-// },
-// dom2html = function(dom) {
-// 	var target = document.getElementById(dom);
-// 	var wrap = document.createElement('div');
-// 	wrap.appendChild(target.cloneNode(true));
-// 	return wrap.innerHTML;
-// },
+// random id, most likely unique
+uu.random_uid = function(length) {
+	length = parseInt(length);
+	if (!length) {
+		length = 11;
+	}
+	var text = "";
+	var possible = "abcdefghijklmnopqrstuvwxyz";
+	text += possible.charAt(Math.floor(Math.random() * possible.length));
+	possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	for (i = 1; i < length; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+};
+
+// object to query, not including the leading "?"
+uu.to_query_string = function(obj) {
+	var parts = [];
+	for (var i in obj) {
+		if (obj.hasOwnProperty(i)) {
+			parts.push(encodeURIComponent(i) + "=" + encodeURIComponent(obj[i]));
+		}
+	}
+	return parts.join("&");
+};
 
 // pad number
 uu.pad = function(number, digits) {
@@ -37,41 +54,12 @@ uu.pad = function(number, digits) {
 }
 
 // trim whitespace before/after
-uu.trim = function(str, charlist) {
-	var whitespace, l = 0,
-		i = 0;
-	str += '';
+uu.trim = function(str){
+	str = str.replace(/(^[^a-zA-Z0-9\(\)]*)|([^a-zA-Z0-9\(\)]*$)/g, '');
+	return str;
+};
 
-	if (!charlist) {
-		// default list
-		whitespace =
-			' \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000';
-	} else {
-		// preg_quote custom list
-		charlist += '';
-		whitespace = charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
-	}
-
-	l = str.length;
-	for (i = 0; i < l; i++) {
-		if (whitespace.indexOf(str.charAt(i)) === -1) {
-			str = str.substring(i);
-			break;
-		}
-	}
-
-	l = str.length;
-	for (i = l - 1; i >= 0; i--) {
-		if (whitespace.indexOf(str.charAt(i)) === -1) {
-			str = str.substring(0, i + 1);
-			break;
-		}
-	}
-
-	return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
-}
-
-// Return text
+// t.b.d.
 uu.strip_tags = function(input, allowed) {
 	allowed = (((allowed || '') + '')
 			.toLowerCase()
@@ -87,7 +75,7 @@ uu.strip_tags = function(input, allowed) {
 		});
 };
 
-// Show array values as strings, to remove cyclic or memory-hogging values
+// to make easier to read at first glance, removes cyclic values
 // 1 level deep
 uu.stringify_simple = function(_in) {
 	// ...
@@ -138,5 +126,18 @@ uu.stringify_double = function(_in) {
 	// ...
 	return JSON.stringify(_out,null,'\t');
 };
+
+
+// Dom<->Html (not quite ready)
+// html2dom = function(html) {
+// 	var parser = new DOMParser();
+// 	return parser.parseFromString(html, "text/html");
+// },
+// dom2html = function(dom) {
+// 	var target = document.getElementById(dom);
+// 	var wrap = document.createElement('div');
+// 	wrap.appendChild(target.cloneNode(true));
+// 	return wrap.innerHTML;
+// },
 
 

@@ -50,6 +50,7 @@
 		clientScripts: [
 			CONFIG.path_root + "/remote_assets/modified/jquery.js",
 			CONFIG.path_root + "/remote_assets/vendor/sugar.js",
+			CONFIG.path_root + "/remote_assets/custom/uu.js",
 			CONFIG.path_root + "/remote_assets/custom/parse.js",
 			CONFIG.path_root + "/remote_assets/custom/crawl.js"
 		]

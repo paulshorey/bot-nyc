@@ -43,7 +43,7 @@ window.casbot.crawl = function(each) {
 				for (var c in each.site.selectors.date) {
 					var elem = eval('$(this)'+each.site.selectors.date[c]);
 					if (elem) {
-						var date = elem.text().replace(/[\s]+/g, ' ').trim();
+						var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
 						item.dates.push(date);
 					}
 				}
@@ -163,7 +163,7 @@ window.casbot.crawl = function(each) {
 					}
 					var timestamp = Date.parse(Date.create(stack.dates[card]));
 					if (!timestamp) {
-						var delimiters = /—|-|\ to\ |\(|\)/;
+						var delimiters = /—|-|\ to\ |\(|\)|\@/;
 						var strings = stack.dates[card].split(delimiters);
 						for (var ea in strings) {
 							timestamp = Date.parse(Date.create(strings[ea]));
@@ -202,12 +202,14 @@ window.casbot.crawl = function(each) {
 			}
 			// links
 			if (!item.links) {
-				var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					if (!stack.links[card]) {
+				for (var card in stack.links) {
+					// ignore calendar and social buttons
+					if (/\/ical/.test(stack.links[card])) {
+						delete stack.links[card];
 						break;
 					}
+				}
+				for (var card in stack.links) {
 					// start from the lowest points (back of element)
 					// compare current value, to all others with higher points (front of element)
 					var matches = [];
@@ -266,7 +268,7 @@ window.casbot.crawl = function(each) {
 					var card = keys[k];
 					if (stack.dates[card]) {
 						stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
-						item.dates.push(unescape(encodeURIComponent(stack.dates[card].trim())));
+						item.dates.push(unescape(encodeURIComponent(uu.trim(stack.dates[card]))));
 					}
 				}
 			}
@@ -284,25 +286,23 @@ window.casbot.crawl = function(each) {
 			// links
 			if (!item.links) {
 				item.links = [];
-				if (Object.keys(stack.links).length<=6) {
-					var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-					for (var k in keys) {
-						var card = keys[k];
-						var link = stack.links[card];
-						// absolute
-						if (link.indexOf(each.site.host)===0) {
-							item.links.push(link);
-						// other site (not allow ??)
-						} else if (link.substring(0,4)=='http') {
-							//item.links.push(link);
-						} else if (link.substring(0,3)=='www') {
-							//item.links.push('http://'+link);
-						// relative
-						} else if (link.substring(0,1)=='/') {
-							item.links.push(each.site.host+link);
-						} else {
-							item.links.push(each.site.host+'/'+link);
-						}
+				var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+				for (var k in keys) {
+					var card = keys[k];
+					var link = stack.links[card];
+					// absolute
+					if (link.indexOf(each.site.host)===0) {
+						item.links.push(link);
+					// other site (not allow ??)
+					} else if (link.substring(0,4)=='http') {
+						//item.links.push(link);
+					} else if (link.substring(0,3)=='www') {
+						//item.links.push('http://'+link);
+					// relative
+					} else if (link.substring(0,1)=='/') {
+						item.links.push(each.site.host+link);
+					} else {
+						item.links.push(each.site.host+'/'+link);
 					}
 				}
 			}
