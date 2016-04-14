@@ -1,3 +1,5 @@
+window.jQuery = undefined;
+window.$ = undefined;
 if (!window.jQuery) {
 	/*! jQuery v1.7.2 jquery.com | jquery.org/license */
 	(function(a, b) {

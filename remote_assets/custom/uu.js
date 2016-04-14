@@ -3,6 +3,24 @@
 */
 var uu = new Object();
 
+uu.is_object = function(obj) {
+	if (Object.prototype.toString.call(obj) == '[object Object]') {
+		return true;
+	}
+};
+uu.is_array = function(obj) {
+	if (Object.prototype.toString.call(obj) == '[object Array]') {
+		return true;
+	}
+};
+uu.to_array = function(obj) {
+	if (typeof obj == 'object') {
+		return Object.keys(obj).map(function(k) { return obj[k] });
+	} else {
+		return [obj];
+	}
+}
+
 // unique id from string
 uu.str_uid = function(str) {
 	// simple
@@ -49,13 +67,24 @@ uu.to_query_string = function(obj) {
 };
 
 // pad number
-uu.pad = function(number, digits) {
-	return number.toString().length < (digits||2) ? "0" + str.toString() : str;
+uu.pad = function(num, front) {
+	num = (num||0);
+	front = (front||2);
+	num = num.toString().substring(0,front);
+	return num.length < front ? ('0'.repeat(front-num.length))+num : num;
+}
+uu.pad_ends = function(num, front, back) {
+	num = (num||0);
+	front = (front||2);
+	back = (back||2);
+	num = uu.pad(num,front);
+	num = num.substring(0,back);
+	return num.length < back ? num+('0'.repeat(back-num.length)) : num;
 }
 
 // trim whitespace before/after
 uu.trim = function(str){
-	str = str.replace(/(^[^a-zA-Z0-9\(\)]*)|([^a-zA-Z0-9\(\)]*$)/g, '');
+	str = str.replace(/(^[^a-zA-Z0-9\(\)\?\!\.]*)|([^a-zA-Z0-9\(\)\?\!\.]*$)/g, '');
 	return str;
 };
 
@@ -141,3 +170,46 @@ uu.stringify_double = function(_in) {
 // },
 
 
+if (!String.prototype.repeat) {
+  String.prototype.repeat = function(count) {
+    'use strict';
+    if (this == null) {
+      throw new TypeError('can\'t convert ' + this + ' to object');
+    }
+    var str = '' + this;
+    count = +count;
+    if (count != count) {
+      count = 0;
+    }
+    if (count < 0) {
+      throw new RangeError('repeat count must be non-negative');
+    }
+    if (count == Infinity) {
+      throw new RangeError('repeat count must be less than infinity');
+    }
+    count = Math.floor(count);
+    if (str.length == 0 || count == 0) {
+      return '';
+    }
+    // Ensuring count is a 31-bit integer allows us to heavily optimize the
+    // main part. But anyway, most current (August 2014) browsers can't handle
+    // strings 1 << 28 chars or longer, so:
+    if (str.length * count >= 1 << 28) {
+      throw new RangeError('repeat count must not overflow maximum string size');
+    }
+    var rpt = '';
+    for (;;) {
+      if ((count & 1) == 1) {
+        rpt += str;
+      }
+      count >>>= 1;
+      if (count == 0) {
+        break;
+      }
+      str += str;
+    }
+    // Could we try:
+    // return Array(count + 1).join(this);
+    return rpt;
+  }
+}

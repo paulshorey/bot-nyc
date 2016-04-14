@@ -8,353 +8,305 @@ if (!window.casbot) {
 window.casbot.crawl = function(each) {
 	each.selectors = {};
 
-	// items
+	// get elements
 	var elements = {};
 	if (each.site.selectors.item) {
-		elements = $(each.site.selectors.item);
+		try {
+			// as jquery command: $('.item')
+			elements = eval(each.site.selectors.item);
+		} catch(e) {
+			// as jquery selector: .item
+			elements = $(each.site.selectors.item);
+		}
 	} else {
 		// later automate
 	}
 
-	// item
+	// each element
 	if (elements) {
 		each.items = [];
-		var timeToday = Date.parse(Date.create('today'));
 		var i = 0;
 		elements.each(function() {
+		try {
 			i++;
-			var item = {score:100};
+
+			///////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////
+			// STACK CARDS
+			///////////////////////////////////////////////////////////////////
+			var stack = {};
+			stack.texts = {};
+			stack.times = {};
+			stack.dates = {};
+			stack.links = {};
+			stack.images = {};
+			stack.timeToday = Date.parse(Date.create('today'));
+			stack.timeTomorrow = Date.parse(Date.create('tomorrow'));
 			
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
-			// MANUAL
+			// STACK - MANUAL
 			///////////////////////////////////////////////////////////////////
-			// img // better to get automatically
-			// title
-			if (each.site.selectors.text) {
-				item.texts = [];
-			}
 			// date
-			if (each.site.selectors.date) {
-				item.dates = [];
-				if (typeof each.site.selectors.date == 'string') {
-					each.site.selectors.date = {"0":each.site.selectors.date};
+			if (each.site.selectors.dates) {
+				if (typeof each.site.selectors.dates == 'string') {
+					each.site.selectors.dates = {"0":each.site.selectors.dates};
 				}
-				for (var c in each.site.selectors.date) {
-					var elem = eval('$(this)'+each.site.selectors.date[c]);
-					if (elem) {
+				stack.index = 0;
+				for (var c in each.site.selectors.dates) {
+					stack.inverse = Object.keys(each.site.selectors.dates).length - stack.index;
+					var elem = eval('$(this)'+each.site.selectors.dates[c]);
+					if (elem.length) {
 						var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
-						item.dates.push(date);
+						stack.dates[ stack.inverse*1000 ] = date;
 					}
+					stack.index++;
 				}
-			}
-			// link
-			if (each.site.selectors.link) {
-				item.links = [];
 			}
 			
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
-			// AUTO
+			// STACK - AUTO
 			///////////////////////////////////////////////////////////////////
-			// stack-cards (parse)
-			var stack = {x:{}};
-			/*
-				>> stack - parse parent
-			*/
-			if (!item.texts) {
-				stack.texts = {};
-				stack.x.texts = {};
+			// parse outerHTML
+			var img = ($(this).html().match(/["']([^"]*.jpg)["']/i)||[])[1];
+			if (img) {
+				stack.images[100] = img;
 			}
-			if (!item.dates) {
-				stack.times = {};
-				stack.dates = {};
-				stack.x.dates = {};
-			}
-			if (!item.links) {
-				stack.links = {};
-				stack.x.links = {};
-			}
-			if (!item.images) {
-				stack.images = {};
-				stack.x.images = {};
-				// images
-				var img = ($(this).html().match(/["']([^"]*.jpg)["']/i)||[])[1];
-				if (img) {
-					stack.images[100] = img;
-					stack.x.images[img] = true;
+			// sort html
+			var assign_layers = function(current, float, depth) {
+				if (!float) {
+					float = 1;
+					depth = 1;
 				}
-			}
+				// self
+				$(current).get(0)._float = float;
+				$(current).get(0)._depth = depth;
+				// children
+				if ($(current).children().length) {
+					$(current).children().each(function(index){
+						var child_depth = depth+1;
+						var child_float = ( ($(this).siblings().length+1) - index );
+						assign_layers(this, child_float, child_depth);
+					});
+				}
+
+			};
+			assign_layers(this);
+			// parse innerHTML
 			stack.iteration = 0;
 			$($(this).find('*').get().reverse()).each(function() {
 				stack.iteration++;
+				$(this).get(0)._i = stack.iteration;
+				var _score = stack.iteration.toString() + uu.pad($(this).get(0)._depth,2) + uu.pad($(this).get(0)._float,2);
+				$(this).get(0)._score = _score;
 				/*
 					>> stack - parse children
 				*/
 				stack = casbot.stack(each.site, stack, this);
 
 			});
-			if (DEBUG) {
-				console.log('# '+(JSON.stringify(stack,null,'\t')));
-			}
 
 			///////////////////////////////////////////////////////////////////
 			// shuffle-cards (sort)
 			// texts
-			if (!item.texts) {
-				var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending
-				keys.reverse().forEach(function(card){
-					if (!stack.texts[card]) {
+			var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending
+			keys.reverse().forEach(function(card){
+				if (!stack.texts[card]) {
+					return;
+				};
+				// start from the lowest points (back of element)
+				// compare current value, to all others with higher points (front of element)
+				var matches = [];
+				keys.forEach(function(c){
+					if (!stack.texts[c]) {
 						return;
 					};
-					console.log('### '+card);
-					// start from the lowest points (back of element)
-					// compare current value, to all others with higher points (front of element)
-					var matches = [];
-					keys.forEach(function(c){
-						if (!stack.texts[c]) {
-							return;
-						};
-						// compare
-						if (card > c) {
-							if (stack.texts[c] == stack.texts[card]) {
-								// if same, keep higher score
-								delete stack.texts[c];
-							} else if (stack.texts[c].indexOf(stack.texts[card]) != -1) {
-								// if current fits into another, remove the longer string, it's probably the parent
-								delete stack.texts[c];
-							}
-						}
-					});
-				});
-			}
-			// dates
-			if (!item.dates) {
-				var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					if (!stack.dates[card]) {
-						break;
-					}
-					stack.dates[card] = stack.dates[card].toUpperCase();
-					// start from the lowest points (back of element)
-					// compare current value, to all others with higher points (front of element)
-					var matches = [];
-					for (var c in stack.dates) {
-						// compare to all others
-						if (parseInt(c) != parseInt(card)) {
+					var texts_c = stack.texts[c].toLowerCase();
+					// compare
+					if (card > c) {
+						if (stack.texts[c] == stack.texts[card].toLowerCase()) {
+							// if same, keep higher score
+							delete stack.texts[c];
+						} else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
 							// if current fits into another, remove the longer string, it's probably the parent
-							if (stack.dates[c].toUpperCase().indexOf(stack.dates[card]) != -1) {
-								delete stack.dates[c];
-							}
+							delete stack.texts[c];
 						}
 					}
+				});
+			});
+			// dates
+			var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			for (var k in keys) {
+				var card = keys[k];
+				if (!stack.dates[card]) {
+					break;
 				}
-			}
-			// times
-			var timeIteration = 0;
-			if (!item.dates) {
-				timeIteration++;
-				var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					if (!stack.dates[card]) {
-						break;
-					}
-					var timestamp = Date.parse(Date.create(stack.dates[card]));
-					if (!timestamp) {
-						var delimiters = /—|-|\ to\ |\(|\)|\@/;
-						var strings = stack.dates[card].split(delimiters);
-						for (var ea in strings) {
-							timestamp = Date.parse(Date.create(strings[ea]));
-							if (timestamp>timeToday) {
-								timestamp;
-								break;
-							}
-						}
-					}
-					if (timestamp >= timeToday) {
-						stack.times[timestamp+timeIteration] = timestamp;
-						break;
-					}
-					// try removing last word
-					if (!timestamp) {
-						var strings = stack.dates[card].split(/\ |,|\'|\"/);
-						for (var ea in strings) {
-							// this should be a recursive function
-							strings.pop();
-							var string = strings.join(' ');
-							//
-							if (string == 'now') {
-								timestamp = timeToday;
-								stack.times[timestamp] = timestamp;
-								break;
-							}
-							// 
-							timestamp = Date.parse(Date.create(string));
-							if (timestamp>=timeToday) {
-								stack.times[timestamp+timeIteration] = timestamp;
-								break;
-							}
+				stack.dates[card] = stack.dates[card].toUpperCase();
+				// start from the lowest points (back of element)
+				// compare current value, to all others with higher points (front of element)
+				var matches = [];
+				for (var c in stack.dates) {
+					// compare to all others
+					if (parseInt(c) != parseInt(card)) {
+						// if current fits into another, remove the longer string, it's probably the parent
+						if (stack.dates[c].toUpperCase().indexOf(stack.dates[card]) != -1) {
+							delete stack.dates[c];
 						}
 					}
 				}
 			}
 			// links
-			if (!item.links) {
-				for (var card in stack.links) {
-					// start from the lowest points (back of element)
-					// compare current value, to all others with higher points (front of element)
-					var matches = [];
-					for (var c in stack.links) {
-						// compare to all others
-						if (parseInt(c) != parseInt(card)) {
-							// if current fits into anything higher, remove the shorter one, it's probably incomplete
-							if (stack.links[c].indexOf(stack.links[card]) != -1) {
-								delete stack.links[card];
-							}
+			for (var card in stack.links) {
+				// start from the lowest points (back of element)
+				// compare current value, to all others with higher points (front of element)
+				var matches = [];
+				for (var c in stack.links) {
+					// compare to all others
+					if (parseInt(c) != parseInt(card)) {
+						// if current fits into anything higher, remove the shorter one, it's probably incomplete
+						if (stack.links[c].indexOf(stack.links[card]) != -1) {
+							delete stack.links[card];
 						}
 					}
 				}
 			}
 			// images
-			if (!item.images) {
-				var keys = Object.keys(stack.images).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					if (!stack.images[card]) {
-						break;
-					}
-					// start from the lowest points (back of element)
-					// compare current value, to all others with higher points (front of element)
-					var matches = [];
-					for (var c in stack.images) {
-						// compare to all others
-						if (parseInt(c) != parseInt(card)) {
-							// if current fits into anything higher, remove the shorter one, it's probably incomplete
-							if (stack.images[c].indexOf(stack.images[card]) != -1) {
-								delete stack.images[card];
-							}
+			var keys = Object.keys(stack.images).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			for (var k in keys) {
+				var card = keys[k];
+				if (!stack.images[card]) {
+					break;
+				}
+				// start from the lowest points (back of element)
+				// compare current value, to all others with higher points (front of element)
+				var matches = [];
+				for (var c in stack.images) {
+					// compare to all others
+					if (parseInt(c) != parseInt(card)) {
+						// if current fits into anything higher, remove the shorter one, it's probably incomplete
+						if (stack.images[c].indexOf(stack.images[card]) != -1) {
+							delete stack.images[card];
 						}
 					}
 				}
 			}
 
+
 			///////////////////////////////////////////////////////////////////
-			// play-card (add to item)
+			///////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////
+			// PLAY CARDS
+			///////////////////////////////////////////////////////////////////
+			var play = {score:100};
+			play.images = [];
+			play.links = [];
+			play.dates = [];
+			play.times = [];
+			play.texts = [];
+
 			// texts
-			if (!item.texts) {
-				item.texts = [];
-				var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					if (stack.texts[card]) {
-						item.texts.push(unescape(encodeURIComponent(stack.texts[card])));
-					}
+			var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			for (var k in keys) {
+				var card = keys[k];
+				if (stack.texts[card]) {
+					play.texts.push(unescape(encodeURIComponent(stack.texts[card])));
 				}
 			}
 			// dates
-			if (!item.dates) {
-				item.dates = [];
-				var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					if (stack.dates[card]) {
-						stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
-						item.dates.push(unescape(encodeURIComponent(uu.trim(stack.dates[card]))));
-					}
+			var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			for (var k in keys) {
+				var card = keys[k];
+				if (stack.dates[card]) {
+					stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
+					play.dates.push(unescape(encodeURIComponent(uu.trim(stack.dates[card]))));
 				}
 			}
 			// times
-			if (!item.times) {
-				item.times = [];
-				var keys = Object.keys(stack.times).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending: prefer lower date, because they are all high enough
-				for (var k in keys) {
-					var card = keys[k];
-					if (stack.times[card]) {
-						item.times.push(stack.times[card]);
-					}
+			var keys = Object.keys(stack.times).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending: prefer lower date, because they are all high enough
+			for (var k in keys) {
+				var card = keys[k];
+				if (stack.times[card]) {
+					play.times.push(stack.times[card]);
 				}
 			}
 			// links
-			if (!item.links) {
-				item.links = [];
-				var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					var link = stack.links[card];
-					// absolute
-					if (link.indexOf(each.site.host)===0) {
-						item.links.push(link);
-					// other site (not allow ??)
-					} else if (link.substring(0,4)=='http') {
-						//item.links.push(link);
-					} else if (link.substring(0,3)=='www') {
-						//item.links.push('http://'+link);
-					// relative
-					} else if (link.substring(0,1)=='/') {
-						item.links.push(each.site.host+link);
-					} else {
-						item.links.push(each.site.host+'/'+link);
-					}
+			var keys = Object.keys(stack.links).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			for (var k in keys) {
+				var card = keys[k];
+				var link = stack.links[card];
+				// absolute
+				if (link.indexOf(each.site.host)===0) {
+					play.links.push(link);
+				// other site (not allow ??)
+				} else if (link.substring(0,4)=='http') {
+					//play.links.push(link);
+				} else if (link.substring(0,3)=='www') {
+					//play.links.push('http://'+link);
+				// relative
+				} else if (link.substring(0,1)=='/') {
+					play.links.push(each.site.host+link);
+				} else {
+					play.links.push(each.site.host+'/'+link);
 				}
 			}
 			// images
-			if (!item.images) {
-				item.images = [];
-				var keys = Object.keys(stack.images).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
-				for (var k in keys) {
-					var card = keys[k];
-					var img = stack.images[card];
-					if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
-						img = each.site.host+img;
-					}
-					item.images.push(img);
+			var keys = Object.keys(stack.images).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			for (var k in keys) {
+				var card = keys[k];
+				var img = stack.images[card];
+				if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
+					img = each.site.host+img;
 				}
+				play.images.push(img);
 			}
 
 			///////////////////////////////////////////////////////////////////
-			///////////////////////////////////////////////////////////////////
-			// FILTER
-			// iterate each for each and if a value is the same in each, remove it for each
-
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// SCORE
-			if (!item.texts[0]) {
-				item.score = 0;
+			///////////////////////////////////////////////////////////////////
+			if (!play.texts[0]) {
+				play.score = 0;
 			}
-			if (!item.links[0] || item.links.length>5) {
-				item.score -= 1;
+			if (!play.links[0] || play.links.length>5) {
+				play.score -= 1;
 			}
-			if (!item.images[0]) {
-				item.score -= 1;
+			if (!play.images[0]) {
+				play.score -= 1;
 			}
-			if (item.dates[0]) {
-				item.score += 1;
+			if (play.dates[0]) {
+				play.score += 1;
 			}
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
-			// CONSOLE
+			// VIEW
+			///////////////////////////////////////////////////////////////////
 			if (DEBUG) {
-				console.log('## '+(JSON.stringify(item,null,'\t')));
+				console.log('# '+(JSON.stringify(stack,null,'\t')));
+				console.log('## '+(JSON.stringify(play,null,'\t')));
 			}
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// DONE
-			if (item.score >= 100) {
-				each.items.push(item);
+			///////////////////////////////////////////////////////////////////
+			// assign
+			if (play.score >= 100) {
+				each.items.push(play);
 			}
-			
-			// CLEANUP
+			// cleanup
 			$(this).remove();
 
+		} catch(e) {
+			console.log('### '+e);
+		}
 		});
 	}
 
-	// more items
+	// more elements
 	if (each.items.length) {
 		if (each.site.selectors.more) {
 			// more selector
@@ -371,7 +323,7 @@ window.casbot.crawl = function(each) {
 		}
 	}
 
-	// next
+	// next site
 	return each;
 
 }

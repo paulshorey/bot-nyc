@@ -4,12 +4,46 @@ if (!window.casbot) {
 	window.casbot = {};
 }
 
+casbot.parseDateString = function(stack, text) {
+	// try parsing whole string
+	var timestamp = Date.parse(Date.create(text));
+	if (!timestamp) {
+		var delimiters = /—|-|\ to\ |\(|\)|\@/;
+		var strings = text.split(delimiters);
+		for (var ea in strings) {
+			timestamp = Date.parse(Date.create(strings[ea]));
+			return timestamp;
+		}
+	}
+	// try removing last word
+	if (!timestamp) {
+		var strings = text.split(/\ |,|\'|\"/);
+		for (var ea in strings) {
+			// this should be a recursive function
+			strings.pop();
+			var string = strings.join(' ');
+			//
+			if (string == 'now') {
+				timestamp = stack.timeToday;
+				return timestamp;
+			}
+			// 
+			timestamp = Date.parse(Date.create(string));
+			return timestamp;
+		}
+	}
+	// success
+	if (timestamp) {
+		return timestamp;
+	}
+};
+
 casbot.stack = function(site, stack, element) {
 	/*
 		filter
 	*/
 	var tag = element.tagName;
-	if ( (tag.length==1 && tag!='A') || tag=='SPAN' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
+	if ( (tag.length==1 && tag!='A') || tag=='EM' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
 		return stack;
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
@@ -18,17 +52,14 @@ casbot.stack = function(site, stack, element) {
 		$(element).remove();
 		return stack;
 	}
+	var score = Math.ceil( parseInt($(element).get(0)._score) / 1000 );
 
 	/*
 		images
 	*/
 	if (stack.images && tag=='IMG' && element.src && element.src.toLowerCase().indexOf('.jpg')!=-1) {
-		var score = stack.iteration*66;
-		score += $(element).width()||0;
-		if (!stack.x.images[element.src]) { // img must be unique per item
-			stack.x.images[element.src] = true;
-			stack.images[score] = element.src;
-		}
+		score *= ($(element).width()||10)/10;
+		stack.images[Math.ceil(score)] = element.src;
 		var text = $(element).attr('title') || $(element).attr('alt');
 		if (!text) { // see if it can be interpreted as date or title
 			return stack;
@@ -37,12 +68,8 @@ casbot.stack = function(site, stack, element) {
 	if (stack.images && $(element).css('background-image') && $(element).css('background-image').toLowerCase().indexOf('.jpg')!=-1) {
 		var src = ($(element).css('background-image').match(/(?:url\()([^\)]+)[\)]/)||[])[1];
 		if (src) {
-			var score = stack.iteration*10;
-			score += $(element).width()||0;
-			if (!stack.x.images[src]) { // img must be unique per item
-				stack.x.images[src] = true;
-				stack.images[score] = src;
-			}
+			score *= ($(element).width()||10)/10;
+			stack.images[Math.ceil(score)] = src;
 		}
 	}
 
@@ -55,23 +82,23 @@ casbot.stack = function(site, stack, element) {
 			return stack;
 		}
 
-		var score = stack.iteration*66;
-		if (element.href.indexOf(site.links)!=-1) {
-			score += 100;
+		if (element.href.indexOf(site.host)!=-1) {
+			score *= 10;
 		} else if (element.href.indexOf('/')===0) {
-			score += 50;
+			score *= 2;
 		}
 		if (element.href.indexOf('javascript:')==-1) {
-			stack.links[score] = element.href;
+			return stack;
 		}
+		// add
+		stack.links[Math.ceil(score)] = element.href;
+		// next
 		if (text.indexOf(site.links)!=-1) { // if text contains link url, it is not a title
 			return stack;
 		}
 	}
 
-	/*
-		ignore empty
-	*/
+	// empty, or single character
 	if (length < 3) {
 		return stack;
 	}
@@ -88,25 +115,47 @@ casbot.stack = function(site, stack, element) {
 			/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(text) ||
 			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
-			var score = stack.iteration;
-			stack.dates[score] = text;
-			$(element).remove();
-			return stack;
+
+			// is date?
+			var timestamp = casbot.parseDateString(stack, text);
+
+			// yes!
+			if (timestamp) {
+				// time, not sure if today or later, possibly date and time
+				if (timestamp > stack.timeToday && timestamp < stack.timeTomorrow) {
+					stack.times[timestamp] = text;
+					$(element).remove();
+					return stack;
+				// date only, today or in the future
+				} else if (timestamp == stack.timeToday || timestamp > stack.timeTomorrow) {
+					stack.dates[timestamp] = text;
+					$(element).remove();
+					return stack;
+				// date in the past!
+				} else {
+					throw 'Date is in the past ['+timestamp+'] = '+text+'';
+				}
+			}
 		}
+	}
+
+	// needed for dates, but not for texts
+	if (tag=='SPAN') {
+		return stack;
 	}
 
 	/*
 		texts
 	*/
 	if (stack.texts) {
+		//console.log('### '+tag+': '+$(element).get(0)._i+'+'+$(element).get(0)._depth+'+'+$(element).get(0)._float+' = '+$(element).get(0)._score);
 		// ignore short words, if no spaces
-		if (length<15 && !/\ /.test(text)) {
+		if (length<10 && !/\ /.test(text)) {
 			return stack;
 		}
 		// smoothe
 		text = text+' ';
 		// prefer first
-		var score = stack.iteration*66;
 		// ignore social
 		if (length < 80 && text.match(/(share|url|bookmark)/i)) {
 			return stack;
@@ -114,22 +163,22 @@ casbot.stack = function(site, stack, element) {
 		// prefer titles
 		switch (tag) {
 			case 'H1':
-				score += 1000;
+				score *= 10;
 				break;
 			case 'H2':
-				score += 900;
+				score *= 9;
 				break;
 			case 'H3':
-				score += 800;
+				score *= 8;
 				break;
 			case 'H4':
-				score += 700;
+				score *= 7;
 				break;
 			case 'H5':
-				score += 600;
+				score *= 6;
 				break;
 			case 'H6':
-				score += 500;
+				score *= 5;
 				break;
 		}
 		// UPPER case prefered
@@ -145,13 +194,13 @@ casbot.stack = function(site, stack, element) {
 		
 		// shorter is better
 		if (length >= 15 && length <= 115) {
-			score += 115 - length;
+			score *= 100 / (115 - length);
 		}
 		// but not too short
 		if (length < 15) {
 			var lower = text.toLowerCase();
 			if (lower != 'free') {
-				score = score * length/15;
+				score *= length/15;
 			}
 		}
 		// 50 chars is perfect
@@ -163,8 +212,7 @@ casbot.stack = function(site, stack, element) {
 		
 		// assign
 		if (score>0) {
-			score = Math.ceil(score);
-			stack.texts[score] = uu.trim(text);
+			stack.texts[Math.ceil(score)] = uu.trim(text);
 		}
 
 		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
