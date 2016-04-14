@@ -215,20 +215,27 @@ window.casbot.crawl = function(each) {
 				}
 			}
 			// dates
-			var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
+			var keys = Object.keys(stack.dates).sort(function(a, b){return parseInt(a)-parseInt(b)}); // asc
 			for (var k in keys) {
 				var card = keys[k];
 				if (stack.dates[card]) {
 					stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
 					play.dates.push(unescape(encodeURIComponent(uu.trim(stack.dates[card]))));
+					play.time = card;
+					break;
 				}
 			}
 			// times
-			var keys = Object.keys(stack.times).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending: prefer lower date, because they are all high enough
+			var keys = Object.keys(stack.times).sort(function(a, b){return parseInt(a)-parseInt(b)}); // asc
 			for (var k in keys) {
 				var card = keys[k];
 				if (stack.times[card]) {
 					play.times.push(stack.times[card]);
+					if (play.time) {
+						play.time += (card - stack.todayDate); // add time to date
+					} else {
+						throw 'No date: '+JSON.stringify(stack); // no date... maybe today?
+					}
 				}
 			}
 			// links

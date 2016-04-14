@@ -239,7 +239,7 @@ BOT.save = function(error) {
 					item.text += '<br />'+its.texts[2];
 				}
 				item.link = its.links[0] || EACH.site.link;
-				item.time = its.times[0];
+				item.time = its.time;
 				item.site = {};
 				item.site.link = EACH.site.link;
 				item.site.title = EACH.site.title;
