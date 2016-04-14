@@ -4,40 +4,6 @@ if (!window.casbot) {
 	window.casbot = {};
 }
 
-casbot.parseDateString = function(stack, text) {
-	// try parsing whole string
-	var timestamp = Date.parse(Date.create(text));
-	if (!timestamp) {
-		var delimiters = /—|-|\ to\ |\(|\)|\@/;
-		var strings = text.split(delimiters);
-		for (var ea in strings) {
-			timestamp = Date.parse(Date.create(strings[ea]));
-			return timestamp;
-		}
-	}
-	// try removing last word
-	if (!timestamp) {
-		var strings = text.split(/\ |,|\'|\"/);
-		for (var ea in strings) {
-			// this should be a recursive function
-			strings.pop();
-			var string = strings.join(' ');
-			//
-			if (string == 'now') {
-				timestamp = stack.timeToday;
-				return timestamp;
-			}
-			// 
-			timestamp = Date.parse(Date.create(string));
-			return timestamp;
-		}
-	}
-	// success
-	if (timestamp) {
-		return timestamp;
-	}
-};
-
 casbot.stack = function(site, stack, element) {
 	/*
 		filter
@@ -48,54 +14,61 @@ casbot.stack = function(site, stack, element) {
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
 	var length = text.length;
-	if (/Google Map/i.test(text)) {
-		$(element).remove();
-		return stack;
-	}
 	var score = Math.ceil( parseInt($(element).get(0)._score) / 1000 );
 
 	/*
 		images
 	*/
 	if (stack.images && tag=='IMG' && element.src && element.src.toLowerCase().indexOf('.jpg')!=-1) {
-		score *= ($(element).width()||10)/10;
-		stack.images[Math.ceil(score)] = element.src;
+		var images_score = score;
+		images_score *= ($(element).width()||10)/10;
+		stack.images[Math.ceil(images_score)] = element.src;
 		var text = $(element).attr('title') || $(element).attr('alt');
 		if (!text) { // see if it can be interpreted as date or title
 			return stack;
 		}
 	}
 	if (stack.images && $(element).css('background-image') && $(element).css('background-image').toLowerCase().indexOf('.jpg')!=-1) {
+		var images_score = score;
 		var src = ($(element).css('background-image').match(/(?:url\()([^\)]+)[\)]/)||[])[1];
 		if (src) {
-			score *= ($(element).width()||10)/10;
-			stack.images[Math.ceil(score)] = src;
+			images_score *= ($(element).width()||10)/10;
+			stack.images[Math.ceil(images_score)] = src;
 		}
 	}
 
 	/*
 		links
 	*/
-	if (stack.links && tag == 'A' && element.href && element.href.length >= 10) {
+	if (stack.links && tag == 'A' && element.href && element.href.length > 3) {
+		var links_score = score;
+		// ignore utilities
+		if (/Google Map/i.test(text)) {
+			$(element).remove();
+			return stack;
+		}
 		if (/\/ical/.test(element.href)) {
 			$(element).remove();
 			return stack;
 		}
-
-		if (element.href.indexOf(site.host)!=-1) {
-			score *= 10;
+		if (/'javascript:'/.test(element.href)) {
+			return stack;
+		}
+		// ignore social links
+		if (/=http/.test(element.href)) {
+			$(element).remove();
+			return stack;
+		}
+		// real
+		var http_this = element.href.replace('https','http');
+		var http_site = site.host.replace('https','http');
+		if (http_this.indexOf(http_site)!=-1) {
+			links_score *= 10;
 		} else if (element.href.indexOf('/')===0) {
-			score *= 2;
+			links_score *= 2;
 		}
-		if (element.href.indexOf('javascript:')==-1) {
-			return stack;
-		}
-		// add
-		stack.links[Math.ceil(score)] = element.href;
-		// next
-		if (text.indexOf(site.links)!=-1) { // if text contains link url, it is not a title
-			return stack;
-		}
+		// ok
+		stack.links[Math.ceil(links_score)] = element.href;
 	}
 
 	// empty, or single character
@@ -116,25 +89,49 @@ casbot.stack = function(site, stack, element) {
 			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
 
-			// is date?
-			var timestamp = casbot.parseDateString(stack, text);
+			// read time
+			var delimiters = /—|-|\ to\ |\(|\)|\@/;
+			var strings = text.split(delimiters);
+			for (var ea in strings) {
+				var string = uu.trim(strings[ea]);
 
-			// yes!
-			if (timestamp) {
-				// time, not sure if today or later, possibly date and time
-				if (timestamp > stack.timeToday && timestamp < stack.timeTomorrow) {
-					stack.times[timestamp] = text;
-					$(element).remove();
-					return stack;
-				// date only, today or in the future
-				} else if (timestamp == stack.timeToday || timestamp > stack.timeTomorrow) {
-					stack.dates[timestamp] = text;
-					$(element).remove();
-					return stack;
-				// date in the past!
-				} else {
-					throw 'Date is in the past ['+timestamp+'] = '+text+'';
+				// is date?
+				var timestamp = Date.parse(Date.create(string));
+				if (!timestamp) {
+					var strs = string.split(/\ |,|\'|\"/);
+					for (var ea in strs) {
+						strs.pop();
+						var str = strs.join(' ');
+						//
+						if (str == 'now') {
+							timestamp = stack.timeToday;
+						}
+						// 
+						timestamp = Date.parse(Date.create(str));
+					}
 				}
+				
+				// yes!
+				if (timestamp) {
+					// date & time, today
+					if (/[a-zA-Z]{3,}/.test(string) && timestamp > stack.timeToday) {
+						stack.dates[timestamp] = string;
+					// time, not sure if today or later, possibly date and time
+					} else if (timestamp > stack.timeToday && timestamp < stack.timeTomorrow) {
+						stack.times[timestamp] = string;
+					// date, today or in the future
+					} else if (timestamp == stack.timeToday || timestamp > stack.timeTomorrow) {
+						stack.dates[timestamp] = string;
+					// past
+					} else {
+						throw 'Date is in the past ['+timestamp+'] = '+string+'';
+					}
+				}
+
+			}
+			if (timestamp) {
+				$(element).remove();
+				return stack;
 			}
 		}
 	}
@@ -148,37 +145,38 @@ casbot.stack = function(site, stack, element) {
 		texts
 	*/
 	if (stack.texts) {
+		var texts_score = score;
 		//console.log('### '+tag+': '+$(element).get(0)._i+'+'+$(element).get(0)._depth+'+'+$(element).get(0)._float+' = '+$(element).get(0)._score);
 		// ignore short words, if no spaces
-		if (length<10 && !/\ /.test(text)) {
+		if (length<3 && !/\ /.test(text)) {
 			return stack;
 		}
 		// smoothe
 		text = text+' ';
 		// prefer first
 		// ignore social
-		if (length < 80 && text.match(/(share|url|bookmark)/i)) {
-			return stack;
-		}
+		// if (length < 80 && text.match(/(share|bookmark)/i)) {
+		// 	return stack;
+		// }
 		// prefer titles
 		switch (tag) {
 			case 'H1':
-				score *= 10;
+				texts_score *= 10;
 				break;
 			case 'H2':
-				score *= 9;
+				texts_score *= 9;
 				break;
 			case 'H3':
-				score *= 8;
+				texts_score *= 8;
 				break;
 			case 'H4':
-				score *= 7;
+				texts_score *= 7;
 				break;
 			case 'H5':
-				score *= 6;
+				texts_score *= 6;
 				break;
 			case 'H6':
-				score *= 5;
+				texts_score *= 5;
 				break;
 		}
 		// UPPER case prefered
@@ -190,38 +188,67 @@ casbot.stack = function(site, stack, element) {
 		// 		x = 50 - length;
 		// 	}
 		// 	score += (upp - low) * x;
+		// }		
+		// // shorter is better
+		// if (length >= 15 && length <= 115) {
+		// 	texts_score *= 100 / (115 - length);
 		// }
-		
-		// shorter is better
-		if (length >= 15 && length <= 115) {
-			score *= 100 / (115 - length);
-		}
-		// but not too short
-		if (length < 15) {
-			var lower = text.toLowerCase();
-			if (lower != 'free') {
-				score *= length/15;
-			}
-		}
-		// 50 chars is perfect
+		// // but not too short
+		// if (length < 15) {
+		// 	var lower = text.toLowerCase();
+		// 	if (lower != 'free') {
+		// 		texts_score *= length/15;
+		// 	}
+		// }
+		// // 50 chars is perfect
 		// if (length < 50) {
-		// 	score += length * 10;
+		// 	texts_score += length * 10;
 		// } else if (length >= 50 && length < 550) {
-		// 	score += 550 - length;
+		// 	texts_score += 550 - length;
 		// }
 		
 		// assign
-		if (score>0) {
-			stack.texts[Math.ceil(score)] = uu.trim(text);
-		}
-
+		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
 		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
-		$(element).remove();
+		if (tag!='A') {
+			$(element).remove();
+		}
 		return stack;
 	}
 
 	return stack;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 casbot.parse = function(site, stack){

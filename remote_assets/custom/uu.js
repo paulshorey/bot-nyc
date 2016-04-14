@@ -84,7 +84,7 @@ uu.pad_ends = function(num, front, back) {
 
 // trim whitespace before/after
 uu.trim = function(str){
-	str = str.replace(/(^[^a-zA-Z0-9\(\)\?\!\.]*)|([^a-zA-Z0-9\(\)\?\!\.]*$)/g, '');
+	str = str.replace(/(^[^\$\#a-zA-Z0-9\(\)\?\!\.]*)|([^a-zA-Z0-9\(\)\?\!\.]*$)/g, '');
 	return str;
 };
 

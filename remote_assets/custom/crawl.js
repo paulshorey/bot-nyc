@@ -64,6 +64,10 @@ window.casbot.crawl = function(each) {
 					stack.index++;
 				}
 			}
+			// date
+			if (each.site.selectors.item_ignore) {
+				$(this).find(each.site.selectors.item_ignore).remove();
+			}
 			
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
@@ -82,7 +86,9 @@ window.casbot.crawl = function(each) {
 				}
 				// self
 				$(current).get(0)._float = float;
+				$(current).attr('_float',float);
 				$(current).get(0)._depth = depth;
+				$(current).attr('_depth',depth);
 				// children
 				if ($(current).children().length) {
 					$(current).children().each(function(index){
@@ -99,8 +105,10 @@ window.casbot.crawl = function(each) {
 			$($(this).find('*').get().reverse()).each(function() {
 				stack.iteration++;
 				$(this).get(0)._i = stack.iteration;
+				$(this).attr('_i',stack.iteration);
 				var _score = stack.iteration.toString() + uu.pad($(this).get(0)._depth,2) + uu.pad($(this).get(0)._float,2);
 				$(this).get(0)._score = _score;
+				$(this).attr('_score',_score);
 				/*
 					>> stack - parse children
 				*/
@@ -219,8 +227,11 @@ window.casbot.crawl = function(each) {
 			for (var k in keys) {
 				var card = keys[k];
 				if (stack.dates[card]) {
+					// string
 					stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
 					play.dates.push(unescape(encodeURIComponent(uu.trim(stack.dates[card]))));
+					// timestamp
+					card = parseInt(card);
 					play.time = card;
 					break;
 				}
@@ -230,9 +241,13 @@ window.casbot.crawl = function(each) {
 			for (var k in keys) {
 				var card = keys[k];
 				if (stack.times[card]) {
+					// string
 					play.times.push(stack.times[card]);
+					// timestamp
+					card = parseInt(card);
 					if (play.time) {
-						play.time += (card - stack.todayDate); // add time to date
+						play.time += (card - stack.timeToday); // add time to date
+						break;
 					} else {
 						throw 'No date: '+JSON.stringify(stack); // no date... maybe today?
 					}
@@ -248,9 +263,9 @@ window.casbot.crawl = function(each) {
 					play.links.push(link);
 				// other site (not allow ??)
 				} else if (link.substring(0,4)=='http') {
-					//play.links.push(link);
+					play.links.push(link);
 				} else if (link.substring(0,3)=='www') {
-					//play.links.push('http://'+link);
+					play.links.push('http://'+link);
 				// relative
 				} else if (link.substring(0,1)=='/') {
 					play.links.push(each.site.host+link);
@@ -280,11 +295,8 @@ window.casbot.crawl = function(each) {
 			if (!play.links[0] || play.links.length>5) {
 				play.score -= 1;
 			}
-			if (!play.images[0]) {
+			if (!play.time) {
 				play.score -= 1;
-			}
-			if (play.dates[0]) {
-				play.score += 1;
 			}
 
 			///////////////////////////////////////////////////////////////////

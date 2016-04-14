@@ -268,7 +268,7 @@ BOT.wait = function(){
 	CASPER.console.info(JSON.stringify(CONFIG,null,'\t'));
 	// limit
 	CASPER.console.warn('wait '+EACH.waited);
-	if (EACH.waited>=3) {
+	if (EACH.waited>=10) {
 		return false;
 	}
 	EACH.waited++;
@@ -294,12 +294,12 @@ BOT.wait = function(){
 		CASPER.wait(1000);
 
 		// MORE items
-		if (EACH.selectors.more) {
-			CASPER.console.log('more = "'+EACH.selectors.more+'"');
-			CASPER.thenClick(EACH.selectors.more, function(){
-				BOT.wait();
-			});
-		}
+		// if (EACH.selectors.more) {
+		// 	CASPER.console.log('more = "'+EACH.selectors.more+'"');
+		// 	CASPER.thenClick(EACH.selectors.more, function(){
+		// 		BOT.wait();
+		// 	});
+		// }
 		
 	}, function(data) {
 		CASPER.console.error('BOT.wait: '+EACH.waited);
