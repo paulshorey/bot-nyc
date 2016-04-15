@@ -106,7 +106,7 @@ uu.strip_tags = function(input, allowed) {
 
 // to make easier to read at first glance, removes cyclic values
 // 1 level deep
-uu.stringify_simple = function(_in) {
+uu.stringify_once = function(_in) {
 	// ...
 	var _out = [];
 	var _i = 0;

@@ -8,6 +8,11 @@ if (!window.casbot) {
 window.casbot.crawl = function(each) {
 	each.selectors = {};
 
+	// get site
+	if (!each.site.title) {
+		each.site.title = window.document.title;
+	}
+
 	// get elements
 	var elements = {};
 	if (each.site.selectors.item) {
@@ -49,16 +54,21 @@ window.casbot.crawl = function(each) {
 			// STACK - MANUAL
 			///////////////////////////////////////////////////////////////////
 			// date
-			if (each.site.selectors.dates) {
-				if (typeof each.site.selectors.dates == 'string') {
-					each.site.selectors.dates = {"0":each.site.selectors.dates};
+			if (each.site.selectors.item_dates) {
+				if (typeof each.site.selectors.item_dates == 'string') {
+					each.site.selectors.item_dates = {"1":each.site.selectors.item_dates};
 				}
 				stack.index = 0;
 				var elem;
-				for (var c in each.site.selectors.dates) {
-					stack.inverse = Object.keys(each.site.selectors.dates).length - stack.index;
-					elem = eval('$(this)'+each.site.selectors.dates[c]);
-					casbot.stack(each.site,stack,elem.get(0));
+				for (var c in each.site.selectors.item_dates) {
+					stack.inverse = Object.keys(each.site.selectors.item_dates).length - stack.index;
+					elem = eval('$(this)'+each.site.selectors.item_dates[c]);
+					if (elem.length) {
+						var timestamp = casbot.stackTime(stack, elem.get(0).innerText);
+						if (!timestamp) {
+							console.log('### Manual date selector did not work');
+						}
+					}
 					stack.index++;
 				}
 			}
@@ -82,34 +92,35 @@ window.casbot.crawl = function(each) {
 					float = 1;
 					depth = 1;
 				}
+				// wrap text nodes
+				var textNodes = $(current).contents().filter(function(){
+					return (this.nodeType===3 && $(this).siblings().length);
+				});
+				textNodes.each(function(){
+					var replacementNode = document.createElement('span');
+					replacementNode.innerHTML = this.textContent;
+					this.parentNode.insertBefore(replacementNode, this);
+					this.parentNode.removeChild(this);
+				});
 				// self
-				$(current).get(0)._float = float;
-				$(current).attr('_float',float);
-				$(current).get(0)._depth = depth;
-				$(current).attr('_depth',depth);
+				var divs_length = ($(current).get(0).innerHTML.match(/(<[DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
+				$(current).get(0)._children = divs_length;
 				// children
-				if ($(current).children().length) {
+				if (divs_length) {
+
 					$(current).children().each(function(index){
-						var child_depth = depth+1;
-						var child_float = ( ($(this).siblings().length+1) - index );
-						assign_layers(this, child_float, child_depth);
+						// console.log('## '+('<'+current.tagName+'>' || '*'+current.nodeType+'*'));
+						// console.log('# '+uu.trim(current.innerHTML||current.nodeContent).substr(0,40)+'...');
+						$(this).get(0)._parent = $(current).get(0).tagName;
+						assign_layers(this);
 					});
 				}
 
 			};
 			assign_layers(this);
 			// parse innerHTML
-			stack.iteration = 0;
+			stack.iteration = 100;
 			$($(this).find('*').get().reverse()).each(function() {
-				stack.iteration++;
-				$(this).get(0)._i = stack.iteration;
-				$(this).attr('_i',stack.iteration);
-				var _score = stack.iteration.toString() + uu.pad($(this).get(0)._depth,2) + uu.pad($(this).get(0)._float,2);
-				$(this).get(0)._score = _score;
-				$(this).attr('_score',_score);
-				/*
-					>> stack - parse children
-				*/
 				stack = casbot.stack(each.site, stack, this);
 
 			});
@@ -126,7 +137,7 @@ window.casbot.crawl = function(each) {
 				// start from the lowest points (back of element)
 				// compare current value, to all others with higher points (front of element)
 				var matches = [];
-				keys.forEach(function(c){
+				keys.forEach(function(c){ // ascending
 					if (!stack.texts[card] || !stack.texts[c]) {
 						return;
 					};
@@ -134,21 +145,21 @@ window.casbot.crawl = function(each) {
 					// compare
 					if (card != c) {
 						// if same, keep higher score
-						if (stack.texts[c] == stack.texts[card].toLowerCase()) {
-							delete stack.texts[c];
-						// if fits into end of another, remove self
-						} else if (texts_c.slice(-this_length)==stack.texts[card].toLowerCase()) {
-							delete stack.texts[card];
-							return;
-						// if fits into beginning of another, remove self, delimeter other
-						} else if (stack.texts[c].substr(0,this_length)==stack.texts[card]) {
-							stack.texts[c] = stack.texts[c].slice(0,this_length) +' |'+ stack.texts[c].slice(this_length);
-							delete stack.texts[card];
-							return;
-						// if current fits into another, remove the longer string, it's probably the parent
-						} else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
-							delete stack.texts[c];
-						}
+						// if (texts_c == stack.texts[card].toLowerCase()) {
+						// 	delete stack.texts[c];
+						// // if fits into end of another, remove self
+						// } else if (texts_c.slice(-this_length)==stack.texts[card].toLowerCase()) {
+						// 	delete stack.texts[card];
+						// 	return;
+						// // if fits into beginning of another, remove self, delimeter other
+						// } else if (stack.texts[c].substr(0,this_length)==stack.texts[card]) {
+						// 	stack.texts[c] = stack.texts[c].slice(0,this_length) +' |'+ stack.texts[c].slice(this_length);
+						// 	delete stack.texts[card];
+						// 	return;
+						// // if current fits into another, remove the longer string, it's probably the parent
+						// } else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
+						// 	delete stack.texts[c];
+						// }
 					}
 				});
 			});
@@ -244,7 +255,7 @@ window.casbot.crawl = function(each) {
 					break;
 				}
 			}
-			// times
+			// time
 			var keys = Object.keys(stack.times).sort(function(a, b){return parseInt(a)-parseInt(b)}); // asc
 			for (var k in keys) {
 				var card = keys[k];

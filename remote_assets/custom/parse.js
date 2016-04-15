@@ -4,18 +4,64 @@ if (!window.casbot) {
 	window.casbot = {};
 }
 
-casbot.stack = function(site, stack, element) {
-	/*
-		filter
-	*/
-	var tag = element.tagName;
-	console.log('### '+element.innerHTML);
-	if ( (tag.length==1 && tag!='A' && tag!='P') || tag=='EM' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
-		return stack;
+casbot.stackTime = function(stack, text) {
+	var delimiters = /—|-|\ to\ |\(|\)|\@/;
+	var strings = text.split(delimiters);
+	for (var ea in strings) {
+		var string = uu.trim(strings[ea]);
+
+		// is date?
+		var timestamp = Date.parse(Date.create(string));
+		if (string.toLowerCase() == 'now') {
+			timestamp = stack.timeToday;
+		}
+		if (!timestamp) {
+			var strs = string.split(/\ |,|\'|\"/);
+			for (var ea in strs) {
+				strs.pop();
+				var str = strs.join(' ');
+				timestamp = Date.parse(Date.create(str));
+				if (timestamp) {
+					break;
+				}
+			}
+		}
+		
+		// yes!
+		if (timestamp) {
+			// date & time, today
+			if (/[a-zA-Z]{3,}/.test(string) && timestamp > stack.timeToday) {
+				stack.dates[timestamp] = string;
+			// time, not sure if today or later, possibly date and time
+			} else if (timestamp > stack.timeToday && timestamp < stack.timeTomorrow) {
+				stack.times[timestamp] = string;
+			// date, today or in the future
+			} else if (timestamp == stack.timeToday || timestamp > stack.timeTomorrow) {
+				stack.dates[timestamp] = string;
+			// past
+			} else {
+				throw 'Date is in the past ['+timestamp+'] = '+string+'';
+			}
+		}
+
 	}
+	return timestamp;
+};
+
+casbot.stack = function(site, stack, element) {
+	
+	// filter
+	var tag = element.tagName;
+	var tags_allowed = 'IMG|VIDEO|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION';
+	var html_regex = new RegExp('/(<['+tags_allowed+']+)/gi');
+	var tag_regex = new RegExp('/^'+tags_allowed+'$/gi');
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
 	var length = text.length;
-	var score = Math.ceil( parseInt($(element).get(0)._score) / 1000 );
+
+	// score
+	stack.iteration++;
+	var divs = (element.innerHTML.match(html_regex) || [] ).length;
+	var score = parseInt( ( stack.iteration - element._children ).toString() + ( stack.iteration.toString().slice(-2) ) );
 
 	/*
 		images
@@ -72,7 +118,7 @@ casbot.stack = function(site, stack, element) {
 		$(element).remove();
 		return stack;
 	}
-	if (length < 20 && /^[more|share|show|view|get]+/i.test(text)) {
+	if (length < 20 && /^more|share|show|view|get/i.test(text)) {
 		$(element).remove();
 		return stack;
 	}
@@ -84,7 +130,7 @@ casbot.stack = function(site, stack, element) {
 	/*
 		dates
 	*/
-	if (stack.dates && length >= 3 && length < 100 && ( /[0-9]/.test(text) || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
+	if (text.length >= 3 && text.length < 100 && ( /[0-9]/.test(text) || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
 		if (
 			/^(Now|Today|Next|Tomorrow)/i.test(text) || 
 			/[0-9][:]{1}[0-9]{2,}/.test(text) ||
@@ -93,48 +139,7 @@ casbot.stack = function(site, stack, element) {
 			/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(text) ||
 			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
-
-			// read time
-			var delimiters = /—|-|\ to\ |\(|\)|\@/;
-			var strings = text.split(delimiters);
-			for (var ea in strings) {
-				var string = uu.trim(strings[ea]);
-
-				// is date?
-				var timestamp = Date.parse(Date.create(string));
-				if (string.toLowerCase() == 'now') {
-					timestamp = stack.timeToday;
-				}
-				if (!timestamp) {
-					var strs = string.split(/\ |,|\'|\"/);
-					for (var ea in strs) {
-						strs.pop();
-						var str = strs.join(' ');
-						timestamp = Date.parse(Date.create(str));
-						if (timestamp) {
-							break;
-						}
-					}
-				}
-				
-				// yes!
-				if (timestamp) {
-					// date & time, today
-					if (/[a-zA-Z]{3,}/.test(string) && timestamp > stack.timeToday) {
-						stack.dates[timestamp] = string;
-					// time, not sure if today or later, possibly date and time
-					} else if (timestamp > stack.timeToday && timestamp < stack.timeTomorrow) {
-						stack.times[timestamp] = string;
-					// date, today or in the future
-					} else if (timestamp == stack.timeToday || timestamp > stack.timeTomorrow) {
-						stack.dates[timestamp] = string;
-					// past
-					} else {
-						throw 'Date is in the past ['+timestamp+'] = '+string+'';
-					}
-				}
-
-			}
+			var timestamp = casbot.stackTime(stack, text);
 			if (timestamp) {
 				$(element).remove();
 				return stack;
@@ -178,12 +183,6 @@ casbot.stack = function(site, stack, element) {
 			case 'H4':
 				texts_score *= 7;
 				break;
-			case 'H5':
-				texts_score *= 6;
-				break;
-			case 'H6':
-				texts_score *= 5;
-				break;
 		}
 		// UPPER case prefered
 		// var upp = (text.substr(0,100).match(/[A-Z]/g)||'').length||0;
@@ -216,9 +215,12 @@ casbot.stack = function(site, stack, element) {
 		// assign
 		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
 		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
-		if ($(element).parent().get(0).tagName.substr(0,1)!='H') {
+		if (element._parent && element._parent.substr(0,1)!='H') {
+			console.log('### '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
 			$(element).remove();
+			return stack;
 		}
+		console.log('# '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
 		return stack;
 	}
 

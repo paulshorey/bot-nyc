@@ -169,188 +169,110 @@
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 	CASPER.console.log(CASPER.cli.options);
 
-/*
-	4. POST
-*/
-var BOT = {};
-BOT.post = function(url, data) {
 
-	var POSTER = require('casper').create({
-		waitTimeout: 10000,
-		stepTimeout: 1000,
-		retryTimeout: 100,
-		verbose: true,
-		exitOnError: false,
-		onWaitTimeout: function(timeout, step) {
-		},
-		onStepTimeout: function(timeout, step) {
-		},
-		onResourceReceived: function(timeout, step) {
-		},
+// GO
+// bot.js crawls list of files, from /sites api
+// go.js crawls one, posted to self (webserver)
+var GO = {};
+GO.site = {};
+GO.requests = [];
+GO.written = 0;
+GO.haunt = function(req, res) {
+
+	GO.site = {};
+	GO.site.id = GO.written+1;
+	GO.site.url = req.post.url;
+	CASPER.echo('START '+GO.site.id);
+	
+	// GO
+	CASPER.echo('= '+GO.site.url);
+	CASPER.thenOpen(GO.site.url,function(){
+
+		CASPER.waitFor(function() {
+			return GO.site.data = CASPER.evaluate(function(site) {
+				var returned = $('#casperJsDone').get(0) ? $('#casperJsDone').get(0).innerText : '';
+				console.log('returned...', returned);
+				try { 
+					var data = JSON.parse(returned);
+					return data;
+				} catch(e) {
+					return false;
+				}
+			}, GO.site);
+		}, function(data) {
+				// SUCCESS
+				CASPER.echo('OK');
+				res.statusCode = 200;
+				res.write(JSON.stringify([{id:CONFIG.iteration,title:JSON.stringify(GO.site.data,null,"\t")}]));
+				res.close();
+			
+		}, function(data) {
+				// FAIL
+				CASPER.echo('no');
+				res.statusCode = 200;
+				res.write(JSON.stringify([{id:CONFIG.iteration,title:'no :('}]));
+				res.close();
+		}, 
+		11000 );
+
+			
 	});
-	POSTER.start();
-	POSTER.thenOpen(url, {
-		method: 'post',
-		data: JSON.stringify(data, null, '\t'),
-		encoding: 'utf8',
-		headers: {
-			'Content-type': 'application/json; charset=utf-8'
+	
+	// DONE
+	CASPER.run(function(){
+		// current
+		GO.requests[GO.written] = null;
+		GO.written++;
+		CASPER.echo('DONE '+GO.written);
+		CASPER.clear();
+		// next
+		if (GO.requests[GO.written]) {
+			var request = GO.requests[GO.written].req;
+			var response = GO.requests[GO.written].res;
+			console.log('respond() from casper.run')
+			CASPER.pro.respond(request,response);
 		}
-	}, function(headers) {
-
-		POSTER.waitFor(function() {
-			return POSTER.evaluate(function() {
-				window.console.log('## POSTED to /site');
-				return true;
-			});
-		});
-		CASPER.console.info('POSTED to /site');
-
 	});
-	POSTER.run();
 
+};
+
+
+
+
+// SERVE
+CASPER.start();
+var server = require('webserver').create(),
+		system = require('system'),
+		port  =  3080;
+var service = server.listen(port, function(request, response) {
+	if (request.method == 'POST' && request.post.url){		
+		// next
+		GO.requests.push({req:request,res:response});
+		// restart
+		if ((GO.requests.length-GO.written)==1) {
+			console.log('respond() from server.listen')
+			GO.haunt(request,response);
+		}
+		
+	} else {
+		// serve index
+		response.statusCode = 200;
+		response.setHeader('Content-Type', 'text/html; charset=utf-8');
+		response.write(FS.read('public/index.tpl'));
+		response.close();
+	}
+
+});
+if(service) {
+	console.log("CasperJS started - http://localhost:" + server.port);
 }
 
 
-/*
-	3. SAVE
-*/
-BOT.save = function(error) {
-
-	CASPER.console.info('Found '+(EACH.items?EACH.items.length||0:0)+' items');
-	// for (var it in EACH.items) {
-	// 	CASPER.console.log(EACH.items[it].text.substr(0,33));
-	// }
-
-	if (EACH.items) {
-		var post = {items:[]};
-		for (var it in EACH.items) {
-			// MODEL
-			// item temporary stack
-			var its = EACH.items[it];
-			//CASPER.console.warn(JSON.stringify(its,null,'\t'));
-			// item
-			var item = {};
-				item.text = its.texts[0];
-				if (its.texts[1]) {
-					item.text += '<br />'+its.texts[1];
-				}
-				if (its.texts[2]) {
-					item.text += '<br />'+its.texts[2];
-				}
-				item.link = its.links[0] || EACH.site.link;
-				item.time = its.time;
-				item.site = {};
-				item.site.host = EACH.site.host;
-				item.site.link = EACH.site.link;
-				item.site.title = EACH.site.title;
-			// conform to api
-			if (item.text && item.date) {
-				item.text = item.text.replace(item.date,'');
-			}
-			//CASPER.console.info(JSON.stringify(item,null,'\t'));
-			// save
-			post.items.push(item);
-		}
-		// post
-		BOT.post(CONFIG.api_host+'/items', post);
-
-		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
-	} else {
-		CASPER.console.warn(JSON.stringify(error));
-	}
-
-};
-
-/*
-	2. WAIT
-*/
-BOT.wait = function(){
-	CASPER.console.info(JSON.stringify(CONFIG,null,'\t'));
-	// limit
-	CASPER.console.warn('wait '+EACH.waited);
-	if (EACH.waited>=10) {
-		return false;
-	}
-	EACH.waited++;
-
-	// start
-	CASPER.waitFor(function() {
-
-		// each evaluate
-		var each = CASPER.evaluate(function(each) {
-			return window.casbot.crawl(each);
-		},EACH);
-
-		// EACH evaluated
-		if (each && each.items && each.items.length) {
-			EACH = each;
-			return true;
-		}
-
-	}, function(data) {
-
-		// SAVE items
-		BOT.save(data);
-		CASPER.wait(1000);
-
-		// MORE items
-		// if (EACH.selectors.more) {
-		// 	CASPER.console.log('more = "'+EACH.selectors.more+'"');
-		// 	CASPER.thenClick(EACH.selectors.more, function(){
-		// 		BOT.wait();
-		// 	});
-		// }
-		
-	}, function(data) {
-		CASPER.console.error('BOT.wait: '+EACH.waited);
-	}, 
-	11000 );
-
-};
 
 
-/*
-	1. START
-*/
-var EACH = {};
-CASPER.start();
-CASPER.thenOpen(CONFIG.api_host+'/sites', {
-	method: 'get'
-}, function(headers) {
-
-	// sites
-	var entries = JSON.parse(CASPER.getPageContent());
-	if (!entries.data) {
-		CASPER.console.error('no sites data');
-		return false;
-	}
-	var sites = [];
-	for (var s in entries.data) {
-		sites.push(entries.data[s]);
-	}
-	CASPER.console.log('sites: ' + sites.length );
-
-	// EACH
-	CASPER.eachThen(sites, function(response) {
-		EACH.more = '';
-		EACH.waited = 0;
-		EACH.site = response.data;
-		CASPER.console.log('EACH.site.link: ' + EACH.site.link );
-		CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
-		CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
-		CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
-		CASPER.thenOpen(EACH.site.link, function(headers) {
-			
-			/*
-				>>
-			*/
-			BOT.wait();
-
-		});
-
-	});
 
 
-});
-CASPER.run();
+
+
+
+
