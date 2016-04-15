@@ -9,7 +9,7 @@ casbot.stack = function(site, stack, element) {
 		filter
 	*/
 	var tag = element.tagName;
-	if ( (tag.length==1 && tag!='A') || tag=='EM' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
+	if ( (tag.length==1 && tag!='A' && tag!='P') || tag=='EM' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
 		return stack;
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
@@ -42,20 +42,13 @@ casbot.stack = function(site, stack, element) {
 	*/
 	if (stack.links && tag == 'A' && element.href && element.href.length > 3) {
 		var links_score = score;
-		// ignore utilities
-		if (/Google Map/i.test(text)) {
+		// ignore text
+		if (/Google Map|=http|twitter|facebook|linkedin|pinterest/i.test(text)) {
 			$(element).remove();
 			return stack;
 		}
-		if (/\/ical/.test(element.href)) {
-			$(element).remove();
-			return stack;
-		}
-		if (/'javascript:'/.test(element.href)) {
-			return stack;
-		}
-		// ignore social links
-		if (/=http/.test(element.href)) {
+		// ignore
+		if (/\/ical|javascript:/.test(element.href)) {
 			$(element).remove();
 			return stack;
 		}
@@ -71,8 +64,19 @@ casbot.stack = function(site, stack, element) {
 		stack.links[Math.ceil(links_score)] = element.href;
 	}
 
-	// empty, or single character
+	/*
+		not relevant
+	*/
 	if (length < 3) {
+		$(element).remove();
+		return stack;
+	}
+	if (length < 20 && /^[more|share|show|view|get]+/i.test(text)) {
+		$(element).remove();
+		return stack;
+	}
+	if (length < 20 && ['url', 'twitter', 'facebook'].indexOf(text.toLowerCase())!=-1) {
+		$(element).remove();
 		return stack;
 	}
 
@@ -210,7 +214,7 @@ casbot.stack = function(site, stack, element) {
 		// assign
 		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
 		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
-		if (tag!='A') {
+		if ($(element).parent().get(0).tagName.substr(0,1)!='H') {
 			$(element).remove();
 		}
 		return stack;

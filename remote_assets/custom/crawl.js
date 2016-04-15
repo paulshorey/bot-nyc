@@ -55,13 +55,10 @@ window.casbot.crawl = function(each) {
 				}
 				stack.index = 0;
 				for (var c in each.site.selectors.dates) {
-					stack.inverse = Object.keys(each.site.selectors.dates).length - stack.index;
-					var elem = eval('$(this)'+each.site.selectors.dates[c]);
-					if (elem.length) {
-						var date = uu.trim(elem.text().replace(/[\s]+/g, ' '));
-						stack.dates[ stack.inverse*1000 ] = date;
+					var date = eval('$(this)'+each.site.selectors.dates[c]);
+					if (date.clone) {
+						$(this).prepend(date.clone());
 					}
-					stack.index++;
 				}
 			}
 			// date
@@ -120,25 +117,35 @@ window.casbot.crawl = function(each) {
 			// shuffle-cards (sort)
 			// texts
 			var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(a)-parseInt(b)}); // ascending
-			keys.reverse().forEach(function(card){
+			keys.reverse().forEach(function(card){ // descending
 				if (!stack.texts[card]) {
 					return;
 				};
+				var this_length = stack.texts[card].length;
 				// start from the lowest points (back of element)
 				// compare current value, to all others with higher points (front of element)
 				var matches = [];
 				keys.forEach(function(c){
-					if (!stack.texts[c]) {
+					if (!stack.texts[card] || !stack.texts[c]) {
 						return;
 					};
 					var texts_c = stack.texts[c].toLowerCase();
 					// compare
-					if (card > c) {
+					if (card != c) {
+						// if same, keep higher score
 						if (stack.texts[c] == stack.texts[card].toLowerCase()) {
-							// if same, keep higher score
 							delete stack.texts[c];
+						// if fits into end of another, remove self
+						} else if (texts_c.slice(-this_length)==stack.texts[card].toLowerCase()) {
+							delete stack.texts[card];
+							return;
+						// if fits into beginning of another, remove self, delimeter other
+						} else if (stack.texts[c].substr(0,this_length)==stack.texts[card]) {
+							stack.texts[c] = stack.texts[c].slice(0,this_length) +' |'+ stack.texts[c].slice(this_length);
+							delete stack.texts[card];
+							return;
+						// if current fits into another, remove the longer string, it's probably the parent
 						} else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
-							// if current fits into another, remove the longer string, it's probably the parent
 							delete stack.texts[c];
 						}
 					}
