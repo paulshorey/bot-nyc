@@ -101,17 +101,18 @@ casbot.stack = function(site, stack, element) {
 
 				// is date?
 				var timestamp = Date.parse(Date.create(string));
+				if (string.toLowerCase() == 'now') {
+					timestamp = stack.timeToday;
+				}
 				if (!timestamp) {
 					var strs = string.split(/\ |,|\'|\"/);
 					for (var ea in strs) {
 						strs.pop();
 						var str = strs.join(' ');
-						//
-						if (str == 'now') {
-							timestamp = stack.timeToday;
-						}
-						// 
 						timestamp = Date.parse(Date.create(str));
+						if (timestamp) {
+							break;
+						}
 					}
 				}
 				
