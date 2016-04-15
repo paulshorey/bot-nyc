@@ -9,6 +9,7 @@ casbot.stack = function(site, stack, element) {
 		filter
 	*/
 	var tag = element.tagName;
+	console.log('### '+element.innerHTML);
 	if ( (tag.length==1 && tag!='A' && tag!='P') || tag=='EM' || tag=='ADDRESS' || tag=='NOSCRIPT' || tag=='IFRAME' || tag=='EMBED' || tag=='VIDEO' || tag=='BR' || tag=='HR' || tag=='WBR' || tag=='FORM' || tag=='TEXTAREA' || tag=='INPUT' || tag=='SELECT' || tag=='CHECKBOX' || tag=='RADIO' || tag=='BUTTON' || tag=='AUDIO') {
 		return stack;
 	}

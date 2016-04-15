@@ -54,14 +54,15 @@ window.casbot.crawl = function(each) {
 					each.site.selectors.dates = {"0":each.site.selectors.dates};
 				}
 				stack.index = 0;
+				var elem;
 				for (var c in each.site.selectors.dates) {
-					var date = eval('$(this)'+each.site.selectors.dates[c]);
-					if (date.clone) {
-						$(this).prepend(date.clone());
-					}
+					stack.inverse = Object.keys(each.site.selectors.dates).length - stack.index;
+					elem = eval('$(this)'+each.site.selectors.dates[c]);
+					casbot.stack(each.site,stack,elem.get(0));
+					stack.index++;
 				}
 			}
-			// date
+			// ignore
 			if (each.site.selectors.item_ignore) {
 				$(this).find(each.site.selectors.item_ignore).remove();
 			}

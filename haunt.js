@@ -337,6 +337,7 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 		EACH.site = response.data;
 		CASPER.console.log('EACH.site.link: ' + EACH.site.link );
 		CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
+		CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
 		CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
 		CASPER.thenOpen(EACH.site.link, function(headers) {
 			
