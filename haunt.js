@@ -61,16 +61,19 @@
 			"ignoreSslErrors": true
 		},
 		onWaitTimeout: function(timeout, step) {
+			//CASPER.console.error('		onWaitTimeout: ' + step, 'error');
 			// CASPER.log('onWaitTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
 			// CASPER.clear();
 			// CASPER.page.stop();
 		},
 		onStepTimeout: function(timeout, step) {
+			//CASPER.console.error('		onStepTimeout: ' + step, 'error');
 			// CASPER.log('onStepTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
 			// CASPER.clear();
 			// CASPER.page.stop();
 		},
 		onResourceReceived: function(timeout, step) {
+			//CASPER.console.error('		onResourceReceived: ' + step, 'error');
 			//CASPER.log( 'onResourceReceived\': "' + ( site ? EACH.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 		},
 		clientScripts: [
@@ -267,15 +270,15 @@ BOT.save = function(error) {
 				item.link = its.links[0] || EACH.site.link;
 				item.time = its.time;
 				item.date = '<span>'+its.dates[0]+'</span> <span>'+its.times[0]+'</span> ';
-				item.scenes = '';
+				item.scene = '';
 				for (var sc in EACH.site.scenes) {
 					var scene = EACH.site.scenes[sc];
-					item.scenes += '<span url="'+scene.url+'">'+scene.title+'</span> ';
+					item.scene += '<span url="'+scene.url+'">'+scene.title+'</span> ';
 				}
-				item.categories = '';
+				item.category = '';
 				for (var sc in EACH.site.categories) {
 					var category = EACH.site.categories[sc];
-					item.categories += '<span url="'+category.url+'">'+category.title+'</span> ';
+					item.category += '<span url="'+category.url+'">'+category.title+'</span> ';
 				}
 				item.source = EACH.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
