@@ -61,3 +61,4 @@ exports.pad = function(str) {
 	var strlen = str.length || 1;
 	return (strlen < 2 ? "0" + str : str);
 };
+

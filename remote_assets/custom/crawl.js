@@ -1,5 +1,5 @@
 //console.log('# crawl.js');
-window.DEBUG = true;
+window.DEBUG = false;
 
 if (!window.casbot) {
 	window.casbot = {};
@@ -99,19 +99,19 @@ window.casbot.crawl = function(each) {
 				textNodes.each(function(){
 					var replacementNode = document.createElement('span');
 					replacementNode.innerHTML = this.textContent;
-					this.parentNode.insertBefore(replacementNode, this);
+					$(this).before(replacementNode);
 					this.parentNode.removeChild(this);
 				});
 				// self
-				var divs_length = ($(current).get(0).innerHTML.match(/(<[DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
+				var divs_length = ($(current).get(0).innerHTML.match(/(<[P|H1|H2|H3|H4|H5|H6|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
 				$(current).get(0)._children = divs_length;
 				// children
 				if (divs_length) {
-
 					$(current).children().each(function(index){
 						// console.log('## '+('<'+current.tagName+'>' || '*'+current.nodeType+'*'));
 						// console.log('# '+uu.trim(current.innerHTML||current.nodeContent).substr(0,40)+'...');
 						$(this).get(0)._parent = $(current).get(0).tagName;
+						$(this).get(0).innerHTML = $(this).get(0).innerHTML+' ';
 						assign_layers(this);
 					});
 				}
@@ -145,21 +145,21 @@ window.casbot.crawl = function(each) {
 					// compare
 					if (card != c) {
 						// if same, keep higher score
-						// if (texts_c == stack.texts[card].toLowerCase()) {
-						// 	delete stack.texts[c];
-						// // if fits into end of another, remove self
-						// } else if (texts_c.slice(-this_length)==stack.texts[card].toLowerCase()) {
-						// 	delete stack.texts[card];
-						// 	return;
-						// // if fits into beginning of another, remove self, delimeter other
-						// } else if (stack.texts[c].substr(0,this_length)==stack.texts[card]) {
-						// 	stack.texts[c] = stack.texts[c].slice(0,this_length) +' |'+ stack.texts[c].slice(this_length);
-						// 	delete stack.texts[card];
-						// 	return;
-						// // if current fits into another, remove the longer string, it's probably the parent
-						// } else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
-						// 	delete stack.texts[c];
-						// }
+						if (texts_c == stack.texts[card].toLowerCase()) {
+							delete stack.texts[c];
+						// if fits into end of another, remove self
+						} else if (texts_c.slice(-this_length)==stack.texts[card].toLowerCase()) {
+							delete stack.texts[card];
+							return;
+						// if fits into beginning of another, remove self, delimeter other
+						} else if (stack.texts[c].substr(0,this_length)==stack.texts[card]) {
+							stack.texts[c] = stack.texts[c].slice(0,this_length) +' |'+ stack.texts[c].slice(this_length);
+							delete stack.texts[card];
+							return;
+						// if current fits into another, remove the longer string, it's probably the parent
+						} else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
+							delete stack.texts[c];
+						}
 					}
 				});
 			});
@@ -238,7 +238,7 @@ window.casbot.crawl = function(each) {
 			for (var k in keys) {
 				var card = keys[k];
 				if (stack.texts[card]) {
-					play.texts.push(unescape(encodeURIComponent(stack.texts[card])));
+					play.texts.push(stack.texts[card]);
 				}
 			}
 			// dates
@@ -248,7 +248,7 @@ window.casbot.crawl = function(each) {
 				if (stack.dates[card]) {
 					// string
 					stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
-					play.dates.push(unescape(encodeURIComponent(uu.trim(stack.dates[card]))));
+					play.dates.push(uu.trim(stack.dates[card]));
 					// timestamp
 					card = parseInt(card);
 					play.time = card;

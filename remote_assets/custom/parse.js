@@ -12,7 +12,7 @@ casbot.stackTime = function(stack, text) {
 
 		// is date?
 		var timestamp = Date.parse(Date.create(string));
-		if (string.toLowerCase() == 'now') {
+		if (string.toLowerCase().substr(0,3) == 'now') {
 			timestamp = stack.timeToday;
 		}
 		if (!timestamp) {
@@ -52,9 +52,17 @@ casbot.stack = function(site, stack, element) {
 	
 	// filter
 	var tag = element.tagName;
-	var tags_allowed = 'IMG|VIDEO|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION';
-	var html_regex = new RegExp('/(<['+tags_allowed+']+)/gi');
-	var tag_regex = new RegExp('/^'+tags_allowed+'$/gi');
+	var tags_read = 'P|H1|H2|H3|H4|H5|H6|IMG|VIDEO|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION';
+	var tags_delete = 'NOSCRIPT';
+	var html_regex = new RegExp('/(<['+tags_read+']+)/gi');
+	var tag_regex_read = new RegExp('/^'+tags_read+'$/gi');
+	var tag_regex_delete = new RegExp('/^'+tags_delete+'$/gi');
+	if (!tag_regex_read.test(tag)) {
+		if (tag_regex_delete.test(tag)){
+			$(element).remove();
+		}
+		return stack;
+	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
 	var length = text.length;
 
@@ -114,10 +122,6 @@ casbot.stack = function(site, stack, element) {
 	/*
 		not relevant
 	*/
-	if (length < 3) {
-		$(element).remove();
-		return stack;
-	}
 	if (length < 20 && /^more|share|show|view|get/i.test(text)) {
 		$(element).remove();
 		return stack;
@@ -157,18 +161,12 @@ casbot.stack = function(site, stack, element) {
 	*/
 	if (stack.texts) {
 		var texts_score = score;
-		//console.log('### '+tag+': '+$(element).get(0)._i+'+'+$(element).get(0)._depth+'+'+$(element).get(0)._float+' = '+$(element).get(0)._score);
-		// ignore short words, if no spaces
-		if (length<3 && !/\ /.test(text)) {
+		// ignore single characters
+		if (length<2) {
 			return stack;
 		}
 		// smoothe
 		text = text+' ';
-		// prefer first
-		// ignore social
-		// if (length < 80 && text.match(/(share|bookmark)/i)) {
-		// 	return stack;
-		// }
 		// prefer titles
 		switch (tag) {
 			case 'H1':
@@ -183,6 +181,23 @@ casbot.stack = function(site, stack, element) {
 			case 'H4':
 				texts_score *= 7;
 				break;
+			case 'A':
+				if (length > 20) {
+					texts_score *= 6;
+				}
+				break;
+			case 'H5':
+				texts_score *= 5;
+				break;
+		}
+		if ($(element).is(':hidden')) {
+			texts_score /= 2;
+		}
+		if (text.toLowerCase().substr(0,1)=='$' || text.toLowerCase().substr(0,4)=='free' || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
+			texts_score /= 3;
+		}
+		if (text.toLowerCase().substr(0,20).indexOf('location')!=-1 || text.toLowerCase().substr(0,60).indexOf('new york, ny')!=-1) {
+			texts_score /= 4;
 		}
 		// UPPER case prefered
 		// var upp = (text.substr(0,100).match(/[A-Z]/g)||'').length||0;
@@ -194,33 +209,34 @@ casbot.stack = function(site, stack, element) {
 		// 	}
 		// 	score += (upp - low) * x;
 		// }		
-		// // shorter is better
-		// if (length >= 15 && length <= 115) {
-		// 	texts_score *= 100 / (115 - length);
-		// }
-		// // but not too short
-		// if (length < 15) {
-		// 	var lower = text.toLowerCase();
-		// 	if (lower != 'free') {
-		// 		texts_score *= length/15;
-		// 	}
-		// }
-		// // 50 chars is perfect
-		// if (length < 50) {
-		// 	texts_score += length * 10;
-		// } else if (length >= 50 && length < 550) {
-		// 	texts_score += 550 - length;
-		// }
+		// shorter is better
+		if (length >= 15 && length <= 115) {
+			texts_score *= 100 / (115 - length);
+		}
+		// but not too short
+		if (length < 15) {
+			texts_score *= length/15;
+		}
+		// 0-20, 20-220
+		if (length < 20) {
+			texts_score *= ( (length / 20) + 1) / 2;
+		} else if (length >= 20 && length < 220) {
+			texts_score *= 220 / (length-20);
+		}
 		
 		// assign
 		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
 		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
 		if (element._parent && element._parent.substr(0,1)!='H') {
-			console.log('### '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
+			if (DEBUG) {
+				console.log('### '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
+			}
 			$(element).remove();
 			return stack;
 		}
-		console.log('# '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
+		if (DEBUG) {
+			console.log('# '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
+		}
 		return stack;
 	}
 

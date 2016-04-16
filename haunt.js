@@ -1,9 +1,30 @@
 // UPPERCASE global scope
 // same bot.js as go.js
 
+	var DEBUG = true;
 	var DT = new Date();
 	var FS = require('fs');
 	var FUN = require('./node_custom/fun.js');
+	var deep_map = function(obj, f, ctx) {
+		if (Array.isArray(obj)) {
+		    return obj.map(function(val, key) {
+		        return (typeof val === 'object') ? deep_map(val, f, ctx) : f.call(ctx, val, key);
+		    });
+		} else if (typeof obj === 'object') {
+		    var res = {};
+		    for (var key in obj) {
+		        var val = obj[key];
+		        if (typeof val === 'object') {
+		            res[key] = deep_map(val, f, ctx);
+		        } else {
+		            res[key] = f.call(ctx, val, key);
+		        }
+		    }
+		    return res;
+		} else {
+		    return obj;
+		}
+	};
 
 	var CONFIG = {
 		"api_host": 'http://localhost:1080',
@@ -231,19 +252,41 @@ BOT.save = function(error) {
 			//CASPER.console.warn(JSON.stringify(its,null,'\t'));
 			// item
 			var item = {};
-				item.text = its.texts[0];
+				item.text = '<span>'+its.texts[0]+'</span> ';
 				if (its.texts[1]) {
-					item.text += '<br />'+its.texts[1];
+					item.text += '<span>'+its.texts[1]+'</span> ';
 				}
 				if (its.texts[2]) {
-					item.text += '<br />'+its.texts[2];
+					item.text += '<span>'+its.texts[2]+'</span> ';
 				}
+				item.image = its.images[0];
 				item.link = its.links[0] || EACH.site.link;
 				item.time = its.time;
-				item.site = {};
-				item.site.host = EACH.site.host;
-				item.site.link = EACH.site.link;
-				item.site.title = EACH.site.title;
+				item.date = '<span>'+its.dates[0]+'</span> <span>'+its.times[0]+'</span> ';
+				item.scenes = '';
+				for (var sc in EACH.site.scenes) {
+					var scene = EACH.site.scenes[sc];
+					item.scenes += '<span url="'+scene.url+'">'+scene.title+'</span> ';
+				}
+				item.categories = '';
+				for (var sc in EACH.site.categories) {
+					var category = EACH.site.categories[sc];
+					item.categories += '<span url="'+category.url+'">'+category.title+'</span> ';
+				}
+				item.source = EACH.site.title;
+				item.source = item.source.split(' | ').reverse().join(' | ');
+				item.source_host = EACH.site.host;
+				item.source_link = EACH.site.link;
+				item.source_title = item.source;
+				item = deep_map(item, function(val, key){
+					if (typeof val == 'string') {
+						return unescape(encodeURIComponent(val));
+					}
+					return val;
+				});
+				if (DEBUG) {
+					CASPER.console.info(JSON.stringify(item,null,'\t'));
+				}
 			// conform to api
 			if (item.text && item.date) {
 				item.text = item.text.replace(item.date,'');

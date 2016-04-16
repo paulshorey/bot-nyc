@@ -156,6 +156,27 @@ uu.stringify_double = function(_in) {
 	return JSON.stringify(_out,null,'\t');
 };
 
+uu.deep_map = function(obj, f, ctx) {
+    if (Array.isArray(obj)) {
+        return obj.map(function(val, key) {
+            return (typeof val === 'object') ? uu.deep_map(val, f, ctx) : f.call(ctx, val, key);
+        });
+    } else if (typeof obj === 'object') {
+        res = {};
+        for (var key in obj) {
+            var val = obj[key];
+            if (typeof val === 'object') {
+                res[key] = uu.deep_map(val, f, ctx);
+            } else {
+                res[key] = f.call(ctx, val, key);
+            }
+        }
+        return res;
+    } else {
+        return obj;
+    }
+};
+
 
 // Dom<->Html (not quite ready)
 // html2dom = function(html) {
