@@ -2,6 +2,8 @@
 // same bot.js as go.js
 
 	var DEBUG = true;
+	var SYSTEM = require('system');
+	var OS = SYSTEM.os;
 	var DT = new Date();
 	var FS = require('fs');
 	var FUN = require('./node_custom/fun.js');
@@ -27,12 +29,14 @@
 	};
 
 	var CONFIG = {
-		"api_host": 'http://localhost:1080',
-		//"api_host": 'http://api.allevents.nyc',
+		"api_host": 'http://api.allevents.nyc',
 		"path_root": '',
 		"port":80,
 		"iteration":0
 	};
+	if (OS.name=='mac') {
+		CONFIG.api_host = 'http://localhost:1080';
+	}
 	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
 	CONFIG.path_root.pop();
 	CONFIG.path_root = CONFIG.path_root.join('/');
@@ -188,7 +192,7 @@
 	}
 
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
-	CASPER.console.log(CASPER.cli.options);
+	//CASPER.console.log(OS.name);
 
 /*
 	4. POST
