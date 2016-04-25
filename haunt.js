@@ -268,23 +268,26 @@ BOT.save = function(error) {
 				}
 				item.image = its.images[0];
 				item.link = its.links[0] || EACH.site.link;
-				item.time = its.time;
-				item.date = '<span>'+its.dates[0]+'</span> <span>'+its.times[0]+'</span> ';
+				item.timestamp = its.time;
+				item.time = its.times[0];
+				item.date = its.dates[0];
 				item.scene = '';
 				for (var sc in EACH.site.scenes) {
 					var scene = EACH.site.scenes[sc];
-					item.scene += '<span url="'+scene.url+'">'+scene.title+'</span> ';
+					item.scene += '<span>'+scene.title+'</span> ';
 				}
 				item.category = '';
 				for (var sc in EACH.site.categories) {
 					var category = EACH.site.categories[sc];
-					item.category += '<span url="'+category.url+'">'+category.title+'</span> ';
+					item.category += '<span>'+category.title+'</span> ';
 				}
 				item.source = EACH.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
 				item.source_host = EACH.site.host;
 				item.source_link = EACH.site.link;
 				item.source_title = item.source;
+				item.source_title = item.source;
+				item.random = FUN.hash_int(its.text[0]+its.text[1]+its.text[2])
 				item = deep_map(item, function(val, key){
 					if (typeof val == 'string') {
 						return unescape(encodeURIComponent(val));

@@ -1,4 +1,21 @@
-exports.str_uid = function(str) {
+exports.hash_int = function(str) {
+	// simple
+	str = str.replace(/[^A-Za-z0-9]/g, '');
+	// unique
+	var hash = 0;
+	if (str.length == 0) {
+		return hash;
+	}
+	for (i = 0; i < str.length; i++) {
+		char = str.charCodeAt(i);
+		hash = ((hash << 5) - hash) + char;
+		hash = hash & hash; // Convert to 32bit integer
+	}
+	// ok
+	return hash;
+};
+
+exports.hash_str = function(str) {
 	// simple
 	str = str.replace(/[^A-Za-z0-9]/g, '');
 	// unique
@@ -15,7 +32,7 @@ exports.str_uid = function(str) {
 	return str.substr(0,40) + hash;
 };
 
-exports.random_uid = function(length) {
+exports.hash_random = function(length) {
 	length = parseInt(length);
 	if (!length) {
 		length = 11;

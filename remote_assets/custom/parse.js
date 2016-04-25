@@ -122,11 +122,11 @@ casbot.stack = function(site, stack, element) {
 	/*
 		not relevant
 	*/
-	if (length < 20 && /^more|share|show|view|get/i.test(text)) {
+	if (/^more|share|show|view|get/i.test(text)) {
 		$(element).remove();
 		return stack;
 	}
-	if (length < 20 && ['url', 'twitter', 'facebook'].indexOf(text.toLowerCase())!=-1) {
+	if (length < 40 && ['url', 'twitter', 'facebook'].indexOf(text.toLowerCase())!=-1) {
 		$(element).remove();
 		return stack;
 	}
@@ -167,7 +167,9 @@ casbot.stack = function(site, stack, element) {
 		}
 		// smoothe
 		text = text+' ';
-		// prefer titles
+
+		// prefer
+		// titles
 		switch (tag) {
 			case 'H1':
 				texts_score *= 10;
@@ -190,25 +192,22 @@ casbot.stack = function(site, stack, element) {
 				texts_score *= 5;
 				break;
 		}
+
+		// demote
+		// hidden
 		if ($(element).is(':hidden')) {
 			texts_score /= 2;
 		}
+		// prices
 		if (text.toLowerCase().substr(0,1)=='$' || text.toLowerCase().substr(0,4)=='free' || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
 			texts_score /= 3;
 		}
-		if (text.toLowerCase().substr(0,20).indexOf('location')!=-1 || text.toLowerCase().substr(0,60).indexOf('new york, ny')!=-1) {
+		// locations
+		if (/^location|new york, ny|[0-9]{5}$/i.test(text.toLowerCase().substr(0,60))) {
 			texts_score /= 4;
 		}
-		// UPPER case prefered
-		// var upp = (text.substr(0,100).match(/[A-Z]/g)||'').length||0;
-		// var low = (text.substr(0,100).match(/[^A-Z]/g)||'').length||0;
-		// if (upp > low) {
-		// 	var x = 1; // dont care too much about capitalization
-		// 	if (length > 5 && length < 50) {
-		// 		x = 50 - length;
-		// 	}
-		// 	score += (upp - low) * x;
-		// }		
+
+		// length
 		// shorter is better
 		if (length >= 15 && length <= 115) {
 			texts_score *= 100 / (115 - length);
@@ -226,7 +225,6 @@ casbot.stack = function(site, stack, element) {
 		
 		// assign
 		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
-		//console.log('### '+score+'	'+tag+': '+text.substr(0,30));
 		if (element._parent && element._parent.substr(0,1)!='H') {
 			if (DEBUG) {
 				console.log('### '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
@@ -274,6 +272,22 @@ casbot.stack = function(site, stack, element) {
 
 
 
+casbot.hash_int = function(str) {
+	// simple
+	str = str.replace(/[^A-Za-z0-9]/g, '');
+	// unique
+	var hash = 0;
+	if (str.length == 0) {
+		return hash;
+	}
+	for (i = 0; i < str.length; i++) {
+		char = str.charCodeAt(i);
+		hash = ((hash << 5) - hash) + char;
+		hash = hash & hash; // Convert to 32bit integer
+	}
+	// ok
+	return hash;
+};
 
 casbot.parse = function(site, stack){
 	var parsed = {};
@@ -286,6 +300,7 @@ casbot.scrollBottom = function(){
 		window.document.body.scrollTop = $(document).height();
 	},500);
 };
+
 casbot.scroll = function(){
 
 	// window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
