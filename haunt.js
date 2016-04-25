@@ -245,7 +245,6 @@ BOT.post = function(url, data) {
 */
 BOT.save = function(error) {
 
-	CASPER.console.info('Found '+(EACH.items?EACH.items.length||0:0)+' items');
 	// for (var it in EACH.items) {
 	// 	CASPER.console.log(EACH.items[it].text.substr(0,33));
 	// }
@@ -308,6 +307,7 @@ BOT.save = function(error) {
 		// post
 		BOT.post(CONFIG.api_host+'/items', post);
 
+		CASPER.console.warn('Saved '+post.items.length+' items');
 		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
 	} else {
 		CASPER.console.warn(JSON.stringify(error));
