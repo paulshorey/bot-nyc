@@ -287,7 +287,7 @@ BOT.save = function(error) {
 				item.source_link = EACH.site.link;
 				item.source_title = item.source;
 				item.source_title = item.source;
-				item.random = FUN.hash_int(its.text[0]+its.text[1]+its.text[2])
+				item.random = FUN.hash_int(its.texts[0]+its.texts[1]+its.texts[2])
 				item = deep_map(item, function(val, key){
 					if (typeof val == 'string') {
 						return unescape(encodeURIComponent(val));
