@@ -35,6 +35,7 @@
 		"iteration":0
 	};
 	if (OS.name=='mac') {
+		CONFIG.crawlOnly = 'https://themoth.org';
 		CONFIG.api_host = 'http://localhost:1080';
 	}
 	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
@@ -265,6 +266,7 @@ BOT.save = function(error) {
 				if (its.texts[2]) {
 					item.text += '<span>'+its.texts[2]+'</span> ';
 				}
+				item.texts = its.texts.splice(0,3);
 				item.image = its.images[0];
 				item.link = its.links[0] || EACH.site.link;
 				item.timestamp = its.time;
@@ -273,12 +275,12 @@ BOT.save = function(error) {
 				item.scene = '';
 				for (var sc in EACH.site.scenes) {
 					var scene = EACH.site.scenes[sc];
-					item.scene += '<span>'+scene.title+'</span> ';
+					item.scene += '<span>'+scene.url+'</span> ';
 				}
 				item.category = '';
 				for (var sc in EACH.site.categories) {
 					var category = EACH.site.categories[sc];
-					item.category += '<span>'+category.title+'</span> ';
+					item.category += '<span>'+category.url+'</span> ';
 				}
 				item.source = EACH.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
@@ -286,7 +288,7 @@ BOT.save = function(error) {
 				item.source_link = EACH.site.link;
 				item.source_title = item.source;
 				item.source_title = item.source;
-				item.random = Math.ceil(Math.random()*10000); //FUN.hash_int(its.texts[0]+its.texts[1]+its.texts[2]);
+				item.random = Math.ceil(Math.random()*10000000); //FUN.hash_int(its.texts[0]+its.texts[1]+its.texts[2]);
 				item = deep_map(item, function(val, key){
 					if (typeof val == 'string') {
 						return unescape(encodeURIComponent(val));
@@ -322,7 +324,7 @@ BOT.wait = function(){
 	CASPER.console.info(JSON.stringify(CONFIG,null,'\t'));
 	// limit
 	CASPER.console.warn('wait '+EACH.waited);
-	if (EACH.waited>=10) {
+	if (EACH.waited>=3) {
 		return false;
 	}
 	EACH.waited++;
@@ -345,20 +347,20 @@ BOT.wait = function(){
 
 		// SAVE items
 		BOT.save(data);
-		CASPER.wait(1000);
+		CASPER.wait(1100);
 
 		// MORE items
-		// if (EACH.selectors.more) {
-		// 	CASPER.console.log('more = "'+EACH.selectors.more+'"');
-		// 	CASPER.thenClick(EACH.selectors.more, function(){
-		// 		BOT.wait();
-		// 	});
-		// }
+		if (EACH.selectors.more) {
+			CASPER.console.log('more = "'+EACH.selectors.more+'"');
+			CASPER.thenClick(EACH.selectors.more, function(){
+				BOT.wait();
+			});
+		}
 		
 	}, function(data) {
 		CASPER.console.error('BOT.wait: '+EACH.waited);
 	}, 
-	11000 );
+	10100 );
 
 };
 
@@ -389,18 +391,18 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 		EACH.more = '';
 		EACH.waited = 0;
 		EACH.site = response.data;
+		CASPER.console.info('EACH.site.host: ' + EACH.site.host );
 		CASPER.console.log('EACH.site.link: ' + EACH.site.link );
 		CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
 		CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
 		CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
-		CASPER.thenOpen(EACH.site.link, function(headers) {
-			
-			/*
-				>>
-			*/
-			BOT.wait();
 
-		});
+		// OK GO
+		if (!CONFIG.crawlOnly || EACH.site.host == CONFIG.crawlOnly) {
+			CASPER.thenOpen(EACH.site.link, function(headers) {
+				BOT.wait();
+			});
+		}
 
 	});
 

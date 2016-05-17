@@ -265,10 +265,10 @@ window.casbot.crawl = function(each) {
 					// timestamp
 					card = parseInt(card);
 					if (play.time) {
-						//play.time += (card - stack.timeToday); // add time to date
+						play.time += (card - stack.timeToday); // ? DO NOT ? add time to date, because not all events have this and it would skew sorting
 						break;
 					} else {
-						throw 'No date: '+JSON.stringify(stack); // no date... maybe today?
+						throw 'No date: '+JSON.stringify(stack); // no date... maybe assume today?
 					}
 				}
 			}

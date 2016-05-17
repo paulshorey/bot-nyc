@@ -139,7 +139,7 @@ uu.stringify_double = function(_in) {
 	if (typeof _in === 'object') {
 		for (_i in _in) {
 			if (_in.hasOwnProperty(_i)) {
-				_out.push([_i, uu.consoleSimpleArray(_in[_i])]);
+				_out.push([_i, uu.stringify_once(_in[_i])]);
 			}
 		}
 		// undefined
