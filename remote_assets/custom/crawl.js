@@ -6,6 +6,7 @@ if (!window.casbot) {
 }
 
 window.casbot.crawl = function(each) {
+	console.log('each',each);
 	each.selectors = {};
 
 	// get site
@@ -237,8 +238,9 @@ window.casbot.crawl = function(each) {
 			var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
 			for (var k in keys) {
 				var card = keys[k];
-				if (stack.texts[card]) {
-					play.texts.push(stack.texts[card]);
+				var text = stack.texts[card];
+				if (text) {
+					play.texts.push(text);
 				}
 			}
 			// dates
@@ -303,6 +305,7 @@ window.casbot.crawl = function(each) {
 				play.images.push(img);
 			}
 
+
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
@@ -343,6 +346,57 @@ window.casbot.crawl = function(each) {
 		}
 		});
 	}
+
+	// look through deck for jokers
+	// text
+	var total = each.items.length;
+	var texts = {};
+	for ( var event in each.items ) {
+		console.log('# event.texts='+(typeof each.items[event].texts));
+		for ( var t in each.items[event].texts ) {
+			var text = each.items[event].texts[t];
+			texts[text] = (texts[text]||0) + 1;
+		}
+	}
+	for ( var text in texts ) {
+		var text_count = texts[text];
+		console.log('## text='+text+' text_count='+text_count);
+		if (text_count>(total/2)) {
+			console.log('### text='+text+' text_count='+text_count);
+			for ( var event in each.items ) {
+				for ( var t in each.items[event].texts ) {
+					if (each.items[event].texts[t]==text) {
+						each.items[event].texts.splice(t,t+1);
+					}
+				}
+			}
+		}
+	}
+	// images
+	var total = each.items.length;
+	var images = {};
+	for ( var event in each.items ) {
+		console.log('# event.images='+(typeof each.items[event].images));
+		for ( var i in each.items[event].images ) {
+			var image = each.items[event].images[i];
+			images[image] = (images[image]||0) + 1;
+		}
+	}
+	for ( var image in images ) {
+		var image_count = images[image];
+		console.log('## image='+image+' image_count='+image_count);
+		if (image_count>(total/2)) {
+			console.log('### image='+image+' image_count='+image_count);
+			for ( var event in each.items ) {
+				for ( var i in each.items[event].images ) {
+					if (each.items[event].images[i]==image) {
+						each.items[event].images.splice(i,i+1);
+					}
+				}
+			}
+		}
+	}
+
 
 	// more elements
 	if (each.items.length) {

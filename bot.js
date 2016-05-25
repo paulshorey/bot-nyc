@@ -35,7 +35,7 @@
 		"iteration":0
 	};
 	if (OS.name=='mac') {
-		CONFIG.crawlOnly = 'https://themoth.org';
+		//CONFIG.crawl_only = 'eventful.com/concerts'; // set in command: --only=link_fragment_match
 		CONFIG.api_host = 'http://localhost:1080';
 	}
 	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
@@ -194,6 +194,9 @@
 	if (CASPER.cli.has("iteration")) {
 		CONFIG.iteration = CASPER.cli.get("iteration");
 	}
+	if (CASPER.cli.has("only")) {
+		CONFIG.crawl_only = CASPER.cli.get("only");
+	}
 
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 	//CASPER.console.log(OS.name);
@@ -259,15 +262,8 @@ BOT.save = function(error) {
 			//CASPER.console.warn(JSON.stringify(its,null,'\t'));
 			// item
 			var item = {};
-				item.text = '<span>'+its.texts[0]+'</span> ';
-				if (its.texts[1]) {
-					item.text += '<span>'+its.texts[1]+'</span> ';
-				}
-				if (its.texts[2]) {
-					item.text += '<span>'+its.texts[2]+'</span> ';
-				}
 				item.texts = its.texts.splice(0,3);
-				item.image = its.images[0];
+				item.image = its.images[0] || '';
 				item.link = its.links[0] || EACH.site.link;
 				item.timestamp = its.time;
 				item.time = its.times[0];
@@ -284,9 +280,8 @@ BOT.save = function(error) {
 				}
 				item.source = EACH.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
-				item.source_host = EACH.site.host;
+				item.source_host = EACH.site.host.replace(/http+s*:\/\/+(?:www\.)*/,'');
 				item.source_link = EACH.site.link;
-				item.source_title = item.source;
 				item.source_title = item.source;
 				item.random = Math.ceil(Math.random()*10000000); //FUN.hash_int(its.texts[0]+its.texts[1]+its.texts[2]);
 				item = deep_map(item, function(val, key){
@@ -309,7 +304,8 @@ BOT.save = function(error) {
 		// post
 		BOT.post(CONFIG.api_host+'/items', post);
 
-		CASPER.console.warn('Saved '+post.items.length+' items');
+		CRAWLED[ EACH.site.link ] = post.items.length;
+		CASPER.console.warn('Saved '+post.items.length+' items for site '+EACH.site.link);
 		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
 	} else {
 		CASPER.console.warn(JSON.stringify(error));
@@ -334,6 +330,10 @@ BOT.wait = function(){
 
 		// each evaluate
 		var each = CASPER.evaluate(function(each) {
+			if (!window.casbot) {
+				return false;
+			}
+			//console.log('### '+$('body').text() );
 			return window.casbot.crawl(each);
 		},EACH);
 
@@ -368,11 +368,13 @@ BOT.wait = function(){
 /*
 	1. START
 */
+var CRAWLED = {};
 var EACH = {};
 CASPER.start();
 CASPER.thenOpen(CONFIG.api_host+'/sites', {
 	method: 'get'
 }, function(headers) {
+	CASPER.console.warn('thenOpen');
 
 	// sites
 	var entries = JSON.parse(CASPER.getPageContent());
@@ -384,21 +386,25 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 	for (var s in entries.data) {
 		sites.push(entries.data[s]);
 	}
-	CASPER.console.log('sites: ' + sites.length );
 
 	// EACH
 	CASPER.eachThen(sites, function(response) {
 		EACH.more = '';
 		EACH.waited = 0;
 		EACH.site = response.data;
-		CASPER.console.info('EACH.site.host: ' + EACH.site.host );
-		CASPER.console.log('EACH.site.link: ' + EACH.site.link );
-		CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
-		CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
-		CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
 
 		// OK GO
-		if (!CONFIG.crawlOnly || EACH.site.host == CONFIG.crawlOnly) {
+		if (
+		    ( !CRAWLED[ EACH.site.link ] ) && 
+		    ( !CONFIG.crawl_only || EACH.site.link.indexOf(CONFIG.crawl_only)>=0 ) 
+		) {
+
+			CASPER.console.info('EACH.site.host: ' + EACH.site.host );
+			CASPER.console.log('EACH.site.link: ' + EACH.site.link );
+			CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
+			CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
+			CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
+
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();
 			});
