@@ -6,6 +6,8 @@ cd /www/bot-nyc
 git reset HEAD -\-hard;
 git pull
 
+casperjs bot.js
+
 # i=0;
 # while true; do
 # 	i=$[$i+1]
