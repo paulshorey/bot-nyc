@@ -283,7 +283,8 @@ BOT.save = function(error) {
 				}
 				item.source = EACH.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
-				item.source_host = EACH.site.host.replace(/http+s*:\/\/+(?:www\.)*/,'');
+				var matched = EACH.site.host.match(/[\/|\.]+([a-zA-Z0-9]+)[\.]{1}([a-z]+)$/);
+				item.source_host = matched[1]+'.'+matched[2];
 				item.source_link = EACH.site.link;
 				item.source_title = item.source;
 				item.random = Math.ceil(Math.random()*10000000); //FUN.hash_int(its.texts[0]+its.texts[1]+its.texts[2]);

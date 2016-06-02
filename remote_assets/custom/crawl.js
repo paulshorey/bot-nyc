@@ -6,7 +6,6 @@ if (!window.casbot) {
 }
 
 window.casbot.crawl = function(each) {
-	console.log('each',each);
 	each.selectors = {};
 
 	// get site
@@ -277,7 +276,7 @@ window.casbot.crawl = function(each) {
 				var card = keys[k];
 				if (stack.dates[card]) {
 					// string
-					stack.dates[card] = stack.dates[card].replace(/-|—|\ to \ /g, ' — ');
+					stack.dates[card] = stack.dates[card].replace(/-|—|–|\ to \ /g, ' — ');
 					play.dates.push(uu.trim(stack.dates[card]));
 					// timestamp
 					card = parseInt(card);

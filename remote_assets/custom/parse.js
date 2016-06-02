@@ -5,7 +5,7 @@ if (!window.casbot) {
 }
 
 casbot.stackTime = function(stack, text) {
-	var delimiters = /—|-|\ to\ |\(|\)|\@/;
+	var delimiters = /—|-|–|\ to\ |\(|\)|\@/;
 	var strings = text.split(delimiters);
 	for (var ea in strings) {
 		var string = uu.trim(strings[ea]);
@@ -52,11 +52,11 @@ casbot.stack = function(site, stack, element) {
 	
 	// filter
 	var tag = element.tagName;
-	var tags_read = 'em | p | h1 | h2 | h3 | h4 | h5 | h6 | img | video | div | span | sub | sup | summary | pre | nav | dl | dt | form | ul | li | a | ol | th | table | tbody | th | td | blockquote | article | section | main | figure | caption | label | font | footer | header | figcaption'.replace(/\ /g,'').toUpperCase();
+	var tags_read = 'p | em | h1 | h2 | h3 | h4 | h5 | h6 | img | video | div | span | sub | sup | summary | pre | nav | dl | dt | form | ul | li | a | ol | th | table | tbody | th | td | blockquote | article | section | main | figure | caption | label | font | footer | header | figcaption'.replace(/\ /g,'').toUpperCase();
 	var tags_delete = 'NOSCRIPT';
-	var html_regex = new RegExp('/(<['+tags_read+']+)/gi');
-	var tag_regex_read = new RegExp('/^'+tags_read+'$/gi');
-	var tag_regex_delete = new RegExp('/^'+tags_delete+'$/gi');
+	//var html_regex = new RegExp('/(<['+tags_read+']+)/gi');
+	var tag_regex_read = new RegExp('/'+tags_read+'$/gi');
+	var tag_regex_delete = new RegExp('/'+tags_delete+'$/gi');
 	if (!tag_regex_read.test(tag)) {
 		if (tag_regex_delete.test(tag)){
 			$(element).remove();
@@ -65,11 +65,11 @@ casbot.stack = function(site, stack, element) {
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
 	var length = text.length;
-
 	// score
 	stack.iteration++;
-	var divs = (element.innerHTML.match(html_regex) || [] ).length;
+	//var divs = (element.innerHTML.match(html_regex) || [] ).length;
 	var score = parseInt( ( stack.iteration - element._children ).toString() + ( stack.iteration.toString().slice(-2) ) );
+	var score_original = score;
 
 	/*
 		images
@@ -162,6 +162,22 @@ casbot.stack = function(site, stack, element) {
 	}
 
 	/*
+		price
+	*/
+	if (text.indexOf('$')!=-1 || text.toLowerCase().indexOf('free')!=-1) {
+		var matched = text.match(/\$[0-9]*|free\ /gi);
+		for (var p in matched) {
+			var price = matched[p].toLowerCase();
+			if (price=='free ') {
+				stack.prices[0] = 'free';
+			} else {
+				price = parseInt(price.substr(1));
+				stack.prices[price] = '$'+price;
+			}
+		}
+	}
+
+	/*
 		texts
 	*/
 	if (stack.texts) {
@@ -173,7 +189,7 @@ casbot.stack = function(site, stack, element) {
 		// smoothe
 		text = text+' ';
 
-		// prefer
+		// PROMOTE
 		// titles
 		switch (tag) {
 			case 'H1':
@@ -198,48 +214,39 @@ casbot.stack = function(site, stack, element) {
 				break;
 		}
 
-		// demote
-		// hidden
-		if ($(element).is(':hidden')) {
-			texts_score /= 2;
-		}
-		// prices
-		if (text.toLowerCase().substr(0,1)=='$' || text.toLowerCase().substr(0,4)=='free' || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
+		// DEMOTE
+		// hidden, free
+		if (text.toLowerCase().substr(0,20).indexOf('free')!=-1 || $(element).is(':hidden')) {
 			texts_score /= 3;
 		}
-		if (text.indexOf('$')!=-1 || text.toLowerCase().indexOf('free')!=-1) {
-			var matched = text.match(/\$[0-9]*|free\ /gi);
-			for (var p in matched) {
-				var price = matched[p].toLowerCase();
-				if (price=='free ') {
-					stack.prices[0] = 'free';
-				} else {
-					price = parseInt(price.substr(1));
-					stack.prices[price] = price;
-				}
-			}
-		}
 
+		// IGNORE
 		// locations
-		if (/^location|new york, ny|[0-9]{5}$/i.test(text.toLowerCase().substr(0,60))) {
-			texts_score /= 4;
+		if (/[0-9.\ ]{2,}(?:mile|kilo)/.test(text) || /^location|new york, ny|[0-9]{5}$/i.test(text.substr(0,60))) {
+			$(element).remove();
+			return stack;
+		}
+		// prices, hashtags
+		if (text.substr(0,1)=='#' || text.substr(0,60).indexOf('$')!=-1 || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
+			$(element).remove();
+			return stack;
 		}
 
-		// length
-		// shorter is better
-		if (length >= 15 && length <= 115) {
-			texts_score *= 100 / (115 - length);
-		}
-		// but not too short
-		if (length < 15) {
-			texts_score *= length/15;
-		}
-		// 0-20, 20-220
-		if (length < 20) {
-			texts_score *= ( (length / 20) + 1) / 2;
-		} else if (length >= 20 && length < 220) {
-			texts_score *= 220 / (length-20);
-		}
+		// // length
+		// // shorter is better
+		// if (length >= 15 && length <= 115) {
+		// 	texts_score *= 100 / (115 - length);
+		// }
+		// // but not too short
+		// if (length < 15) {
+		// 	texts_score *= length/15;
+		// }
+		// // 0-20, 20-220
+		// if (length < 20) {
+		// 	texts_score *= ( (length / 20) + 1) / 2;
+		// } else if (length >= 20 && length < 220) {
+		// 	texts_score *= 220 / (length-20);
+		// }
 		
 		// assign
 		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
