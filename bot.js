@@ -266,8 +266,11 @@ BOT.save = function(error) {
 				item.image = its.images[0] || '';
 				item.link = its.links[0] || EACH.site.link;
 				item.timestamp = its.time;
+				item.featured_images = its.featured_images;
+				item.featured = its.featured;
 				item.time = its.times[0];
 				item.date = its.dates[0];
+				item.price = its.price;
 				item.scene = '';
 				for (var sc in EACH.site.scenes) {
 					var scene = EACH.site.scenes[sc];

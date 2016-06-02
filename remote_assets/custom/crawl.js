@@ -49,6 +49,8 @@ window.casbot.crawl = function(each) {
 			stack.images = {};
 			stack.timeToday = Date.parse(Date.create('today'));
 			stack.timeTomorrow = Date.parse(Date.create('tomorrow'));
+			stack.featured_images = {};
+			stack.prices = {};
 			
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
@@ -233,6 +235,32 @@ window.casbot.crawl = function(each) {
 			play.dates = [];
 			play.times = [];
 			play.texts = [];
+			play.featured_images = stack.featured_images;
+			play.featured = '';
+			play.price = null;
+
+			// featured image 
+			if (Object.keys(stack.featured_images).length) {
+				var highest = Object.keys(stack.featured_images).reduce(function(A, B){
+					var iA = parseInt(A)||0;
+					var iB = parseInt(B)||0;
+					return iA>iB ? stack.featured_images[A] : stack.featured_images[B];
+				});
+				play.featured = stack.featured_images[ highest ];
+			}
+
+			// price 
+			if (Object.keys(stack.prices).length) {
+				var lowest = 0;
+				if (!stack.prices[ lowest ]) {
+					lowest = Object.keys(stack.prices).reduce(function(A, B){
+						var iA = parseInt(A)||0;
+						var iB = parseInt(B)||0;
+						return iA<iB ? stack.prices[A] : stack.prices[B];
+					});
+				}
+				play.price = stack.prices[ lowest ];
+			}
 
 			// texts
 			var keys = Object.keys(stack.texts).sort(function(a, b){return parseInt(b)-parseInt(a)}); // descending
@@ -267,7 +295,7 @@ window.casbot.crawl = function(each) {
 					// timestamp
 					card = parseInt(card);
 					if (play.time) {
-						play.time += (card - stack.timeToday); // ? DO NOT ? add time to date, because not all events have this and it would skew sorting
+						play.time += (card - stack.timeToday); // maybe ? DO NOT ? add time to date, because not all events have this and it would skew sorting
 						break;
 					} else {
 						throw 'No date: '+JSON.stringify(stack); // no date... maybe assume today?

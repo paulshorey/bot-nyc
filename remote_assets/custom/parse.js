@@ -52,7 +52,7 @@ casbot.stack = function(site, stack, element) {
 	
 	// filter
 	var tag = element.tagName;
-	var tags_read = 'P|H1|H2|H3|H4|H5|H6|IMG|VIDEO|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION';
+	var tags_read = 'em | p | h1 | h2 | h3 | h4 | h5 | h6 | img | video | div | span | sub | sup | summary | pre | nav | dl | dt | form | ul | li | a | ol | th | table | tbody | th | td | blockquote | article | section | main | figure | caption | label | font | footer | header | figcaption'.replace(/\ /g,'').toUpperCase();
 	var tags_delete = 'NOSCRIPT';
 	var html_regex = new RegExp('/(<['+tags_read+']+)/gi');
 	var tag_regex_read = new RegExp('/^'+tags_read+'$/gi');
@@ -78,6 +78,11 @@ casbot.stack = function(site, stack, element) {
 		var images_score = score;
 		images_score *= ($(element).width()||10)/10;
 		stack.images[Math.ceil(images_score)] = element.src;
+
+		if ( $(element).width() > 100 && ( $(element).height() < $(element).width() ) ) {
+			stack.featured_images[Math.ceil(images_score)] = element.src;
+		}
+
 		var text = $(element).attr('title') || $(element).attr('alt');
 		if (!text) { // see if it can be interpreted as date or title
 			return stack;
@@ -202,6 +207,19 @@ casbot.stack = function(site, stack, element) {
 		if (text.toLowerCase().substr(0,1)=='$' || text.toLowerCase().substr(0,4)=='free' || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
 			texts_score /= 3;
 		}
+		if (text.indexOf('$')!=-1 || text.toLowerCase().indexOf('free')!=-1) {
+			var matched = text.match(/\$[0-9]*|free\ /gi);
+			for (var p in matched) {
+				var price = matched[p].toLowerCase();
+				if (price=='free ') {
+					stack.prices[0] = 'free';
+				} else {
+					price = parseInt(price.substr(1));
+					stack.prices[price] = price;
+				}
+			}
+		}
+
 		// locations
 		if (/^location|new york, ny|[0-9]{5}$/i.test(text.toLowerCase().substr(0,60))) {
 			texts_score /= 4;
