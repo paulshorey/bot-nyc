@@ -46,7 +46,7 @@ casbot.stackTime = function(stack, text) {
 
 	}
 	return timestamp;
-}; 
+};
 
 casbot.stack = function(site, stack, element) {
 	
