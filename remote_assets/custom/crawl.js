@@ -1,4 +1,3 @@
-//console.log('# crawl.js');
 window.DEBUG = false;
 
 if (!window.casbot) {
@@ -379,7 +378,6 @@ window.casbot.crawl = function(each) {
 	var total = each.items.length;
 	var texts = {};
 	for ( var event in each.items ) {
-		console.log('# event.texts='+(typeof each.items[event].texts));
 		for ( var t in each.items[event].texts ) {
 			var text = each.items[event].texts[t];
 			texts[text] = (texts[text]||0) + 1;
@@ -387,9 +385,7 @@ window.casbot.crawl = function(each) {
 	}
 	for ( var text in texts ) {
 		var text_count = texts[text];
-		console.log('## text='+text+' text_count='+text_count);
 		if (text_count>(total/2)) {
-			console.log('### text='+text+' text_count='+text_count);
 			for ( var event in each.items ) {
 				for ( var t in each.items[event].texts ) {
 					if (each.items[event].texts[t]==text) {
@@ -403,7 +399,6 @@ window.casbot.crawl = function(each) {
 	var total = each.items.length;
 	var images = {};
 	for ( var event in each.items ) {
-		console.log('# event.images='+(typeof each.items[event].images));
 		for ( var i in each.items[event].images ) {
 			var image = each.items[event].images[i];
 			images[image] = (images[image]||0) + 1;
@@ -411,9 +406,7 @@ window.casbot.crawl = function(each) {
 	}
 	for ( var image in images ) {
 		var image_count = images[image];
-		console.log('## image='+image+' image_count='+image_count);
 		if (image_count>(total/2)) {
-			console.log('### image='+image+' image_count='+image_count);
 			for ( var event in each.items ) {
 				for ( var i in each.items[event].images ) {
 					if (each.items[event].images[i]==image) {
