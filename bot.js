@@ -78,6 +78,7 @@
 			//CASPER.log( 'onResourceReceived\': "' + ( site ? EACH.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
 		},
 		clientScripts: [
+			CONFIG.path_root + "/remote_assets/modified/es6.js",
 			CONFIG.path_root + "/remote_assets/modified/jquery.js",
 			CONFIG.path_root + "/remote_assets/vendor/sugar.js",
 			CONFIG.path_root + "/remote_assets/custom/uu.js",
@@ -249,10 +250,6 @@ BOT.post = function(url, data) {
 */
 BOT.save = function(error) {
 
-	// for (var it in EACH.items) {
-	// 	CASPER.console.log(EACH.items[it].text.substr(0,33));
-	// }
-
 	if (EACH.items) {
 		var post = {items:[]};
 		for (var it in EACH.items) {
@@ -274,12 +271,12 @@ BOT.save = function(error) {
 				item.scene = '';
 				for (var sc in EACH.site.scenes) {
 					var scene = EACH.site.scenes[sc];
-					item.scene += '<span>'+scene.url+'</span> ';
+					item.scene += '<span>'+scene.title+'</span> ';
 				}
 				item.category = '';
 				for (var sc in EACH.site.categories) {
 					var category = EACH.site.categories[sc];
-					item.category += '<span>'+category.url+'</span> ';
+					item.category += '<span>'+category.title+'</span> ';
 				}
 				item.source = EACH.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
@@ -294,14 +291,10 @@ BOT.save = function(error) {
 					}
 					return val;
 				});
-				if (DEBUG) {
-					CASPER.console.info(JSON.stringify(item,null,'\t'));
-				}
 			// conform to api
 			if (item.text && item.date) {
 				item.text = item.text.replace(item.date,'');
 			}
-			//CASPER.console.info(JSON.stringify(item,null,'\t'));
 			// save
 			post.items.push(item);
 		}
@@ -310,7 +303,7 @@ BOT.save = function(error) {
 
 		CRAWLED[ EACH.site.link ] = post.items.length;
 		CASPER.console.warn('Saved '+post.items.length+' items for site '+EACH.site.link);
-		//CASPER.console.info(JSON.stringify(EACH,null,"\t"));
+		
 	} else {
 		CASPER.console.warn(JSON.stringify(error));
 	}
@@ -321,13 +314,12 @@ BOT.save = function(error) {
 	2. WAIT
 */
 BOT.wait = function(){
-	CASPER.console.info(JSON.stringify(CONFIG,null,'\t'));
 	// limit
-	CASPER.console.warn('wait '+EACH.waited);
-	if (EACH.waited>=3) {
+	EACH.waited++;
+	CASPER.console.warn('waiting '+EACH.waited);
+	if (EACH.waited>3) {
 		return false;
 	}
-	EACH.waited++;
 
 	// start
 	CASPER.waitFor(function() {
@@ -337,7 +329,6 @@ BOT.wait = function(){
 			if (!window.casbot) {
 				return false;
 			}
-			//console.log('### '+$('body').text() );
 			return window.casbot.crawl(each);
 		},EACH);
 
@@ -378,7 +369,6 @@ CASPER.start();
 CASPER.thenOpen(CONFIG.api_host+'/sites', {
 	method: 'get'
 }, function(headers) {
-	CASPER.console.warn('thenOpen');
 
 	// sites
 	var entries = JSON.parse(CASPER.getPageContent());
@@ -403,11 +393,11 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 		    ( !CONFIG.crawl_only || EACH.site.link.indexOf(CONFIG.crawl_only)>=0 ) 
 		) {
 
-			CASPER.console.info('EACH.site.host: ' + EACH.site.host );
-			CASPER.console.log('EACH.site.link: ' + EACH.site.link );
-			CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
-			CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
-			CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
+			// CASPER.console.info('EACH.site.host: ' + EACH.site.host );
+			// CASPER.console.log('EACH.site.link: ' + EACH.site.link );
+			// CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
+			// CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
+			// CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
 
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();

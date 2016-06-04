@@ -1,10 +1,12 @@
-window.DEBUG = false;
+window.DEBUG = true;
 
 if (!window.casbot) {
 	window.casbot = {};
 }
 
 window.casbot.crawl = function(each) {
+	// clear more selector which got us here from previous page, to reset at the bottom for next thenClick
+	$('#thenClickSelector').remove();
 	each.selectors = {};
 
 	// get site
@@ -60,14 +62,47 @@ window.casbot.crawl = function(each) {
 					each.site.selectors.item_dates = {"1":each.site.selectors.item_dates};
 				}
 				stack.index = 0;
-				var elem;
 				for (var c in each.site.selectors.item_dates) {
 					stack.inverse = Object.keys(each.site.selectors.item_dates).length - stack.index;
-					elem = eval('$(this)'+each.site.selectors.item_dates[c]);
+					try {
+						//var toEval = "$(this).prevAll('tr').find('.fblack').first()";
+						var elem = $(this).prevAll('.fblack');
+					} catch(e) {
+						var elem = $(this).find(each.site.selectors.item_dates[c]);
+						console.log('# :*(');
+					}
 					if (elem.length) {
-						var timestamp = casbot.stackTime(stack, elem.get(0).innerText);
+						//console.log('## '+toEval);
+						console.log('## '+elem.length);
+						var timestamp = casbot.stackTime(stack, elem[0].innerText);
 						if (!timestamp) {
 							console.log('### Manual date selector did not work');
+						}
+					}
+					stack.index++;
+				}
+			}
+			// price
+			if (each.site.selectors.item_prices) {
+				if (typeof each.site.selectors.item_prices == 'string') {
+					each.site.selectors.item_prices = {"1":each.site.selectors.item_prices};
+				}
+				stack.index = 0;
+				for (var c in each.site.selectors.item_prices) {
+					stack.inverse = Object.keys(each.site.selectors.item_prices).length - stack.index;
+					try {
+						//var toEval = "$(this).prevAll('tr').find('.fblack').first()";
+						var elem = $(this).prevAll('.fblack');
+					} catch(e) {
+						var elem = $(this).find(each.site.selectors.item_prices[c]);
+						console.log('# :*(');
+					}
+					if (elem.length) {
+						//console.log('## '+toEval);
+						console.log('## '+elem.length);
+						var timestamp = casbot.stackTime(stack, elem[0].innerText);
+						if (!timestamp) {
+							console.log('### Manual price selector did not work');
 						}
 					}
 					stack.index++;
@@ -148,16 +183,25 @@ window.casbot.crawl = function(each) {
 						// if same, keep higher score
 						if (texts_c == stack.texts[card].toLowerCase()) {
 							delete stack.texts[c];
-						// if fits into end of another, remove self
-						} else if (texts_c.slice(-this_length)==stack.texts[card].toLowerCase()) {
-							delete stack.texts[card];
+						// if self starts/ends with other, remove self (self is probably parent)
+						} else if (stack.texts[card].startsWith(stack.texts[c]+' ') || stack.texts[card].endsWith(stack.texts[c]+' ')) {
+							delete stack.texts[c];
 							return;
-						// if fits into beginning of another, remove self, delimeter other
-						} else if (stack.texts[c].substr(0,this_length)==stack.texts[card]) {
-							stack.texts[c] = stack.texts[c].slice(0,this_length) +' |'+ stack.texts[c].slice(this_length);
-							delete stack.texts[card];
-							return;
-						// if current fits into another, remove the longer string, it's probably the parent
+						// // if other starts with self, remove self, delimeter other
+						// } else if (stack.texts[c].startsWith(stack.texts[card])) {
+						// 	var other = uu.trim(stack.texts[c].replace(stack.texts[card]));
+						// 	var self = stack.texts[card];
+						// 	stack.texts[c] = self +' |'+ other;
+						// 	delete stack.texts[card];
+						// 	return;
+						// // if other ends with self, remove self, delimeter other
+						// } else if (stack.texts[c].endsWith(stack.texts[card])) {
+						// 	var other = uu.trim(stack.texts[c].replace(stack.texts[card]));
+						// 	var self = stack.texts[card];
+						// 	stack.texts[c] = other +' |'+ self;
+						// 	delete stack.texts[card];
+						// 	return;
+						// if self fits into another, remove other longer string (other is probably the parent)
 						} else if (texts_c.indexOf(stack.texts[card].toLowerCase()) != -1) {
 							delete stack.texts[c];
 						}
@@ -227,7 +271,8 @@ window.casbot.crawl = function(each) {
 			///////////////////////////////////////////////////////////////////
 			// PLAY CARDS
 			///////////////////////////////////////////////////////////////////
-			var play = {score:100};
+			var play = {};
+			play.score = 100;
 			play.images = [];
 			play.links = [];
 			play.dates = [];
@@ -331,16 +376,22 @@ window.casbot.crawl = function(each) {
 				play.images.push(img);
 			}
 
-
-			///////////////////////////////////////////////////////////////////
-			///////////////////////////////////////////////////////////////////
-			///////////////////////////////////////////////////////////////////
-			// SCORE
-			///////////////////////////////////////////////////////////////////
+			// score
+			if (stack.ignore) {
+				play.score = 0;
+			}
 			if (!play.texts[0]) {
 				play.score = 0;
 			}
-			if (!play.links[0] || play.links.length>5) {
+			if (play.texts.join().length<20) {
+				play.score -= 1;
+			} else {
+				play.score += 1;
+			}
+			if (!play.links[0]) {
+				play.score -= 1;
+			}
+			if (!play.links.length>4) {
 				play.score -= 1;
 			}
 			if (!play.time) {
@@ -422,9 +473,23 @@ window.casbot.crawl = function(each) {
 	if (each.items.length) {
 		if (each.site.selectors.more) {
 			// more selector
-			if ($(each.site.selectors.more).length && !/disabled|active|selected/.test($(each.site.selectors.more).get(0).outerHTML)) {
+
+			var more = {};
+			if (each.site.selectors.item) {
+				try {
+					// as jquery command: $('.item')
+					more = eval(each.site.selectors.more);
+				} catch(e) {
+					// as jquery selector: .item
+					more = $(each.site.selectors.more);
+				}
+			} else {
+				// later automate
+			}
+			if (more.length && !/disabled|active|selected/.test(more.get(0).outerHTML)) {
 				// still has link
-				each.selectors.more = each.site.selectors.more;
+				more.attr('id','thenClickSelector');
+				each.selectors.more = '#thenClickSelector';
 			} else {
 				// no more
 				each.site.selectors.more = null;

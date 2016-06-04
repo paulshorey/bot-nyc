@@ -9,7 +9,10 @@ casbot.stackTime = function(stack, text) {
 	var strings = text.split(delimiters);
 	for (var ea in strings) {
 		var string = uu.trim(strings[ea]);
-
+		var mmdd = /([0-9]{2}\/[0-9]{2})/;
+		if (string.match(mmdd)) {
+			string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
+		}
 		// is date?
 		var timestamp = Date.parse(Date.create(string));
 		if (string.toLowerCase().substr(0,3) == 'now') {
@@ -40,7 +43,7 @@ casbot.stackTime = function(stack, text) {
 				stack.dates[timestamp] = string;
 			// past
 			} else {
-				throw 'Date is in the past ['+timestamp+'] = '+string+'';
+				throw 'Date is in the past  ['+timestamp+'] <= '+string+'';
 			}
 		}
 
@@ -120,6 +123,16 @@ casbot.stack = function(site, stack, element) {
 		} else if (element.href.indexOf('/')===0) {
 			links_score *= 2;
 		}
+		// good
+		if (/more|&raquo;/gi.test(text)) {
+			links_score *= 100;
+		}
+		if (/\?/.test(text)) {
+			links_score /= 10;
+		}
+		if (/\&/.test(text)) { // again, if multiple uri vars ?one=one&two=two, then demoted twice!
+			links_score /= 10;
+		}
 		// ok
 		stack.links[Math.ceil(links_score)] = element.href;
 	}
@@ -175,6 +188,10 @@ casbot.stack = function(site, stack, element) {
 				stack.prices[price] = '$'+price;
 			}
 		}
+		if (text.length<5) {
+			$(element).remove();
+			return stack;
+		}
 	}
 
 	/*
@@ -215,19 +232,26 @@ casbot.stack = function(site, stack, element) {
 		}
 
 		// DEMOTE
+		// sold out
+		var search50 = text.toLowerCase().substr(0,50);
+		if (search50.indexOf('sold out')!=-1) {
+			score.ignore = true;
+			return stack;
+		}
+
 		// hidden, free
 		if (text.toLowerCase().substr(0,20).indexOf('free')!=-1 || $(element).is(':hidden')) {
-			texts_score /= 3;
+			texts_score /= 10;
 		}
 
 		// IGNORE
-		// locations
-		if (/[0-9.\ ]{2,}(?:mile|kilo)/.test(text) || /^location|new york, ny|[0-9]{5}$/i.test(text.substr(0,60))) {
+		// locations, counts
+		if (/[0-9.\ ]{2,}[a-z]{2,}\ ?$/i.test(text) || /[0-9.\ ]{2,}(?:mile|kilo)/.test(text) || /^location|new york, ny|[a-z]+\ ?\,\ ?[0-9]{5}/i.test(text.substr(0,60))) {
 			$(element).remove();
 			return stack;
 		}
-		// prices, hashtags
-		if (text.substr(0,1)=='#' || text.substr(0,60).indexOf('$')!=-1 || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
+		// prices, hashtags, bookmark
+		if (text.substring(1,8)=='ookmark' || text.substr(0,1)=='#' || text.substr(0,60).indexOf('$')!=-1 || text.toLowerCase().substr(0,20).indexOf('more')!=-1) {
 			$(element).remove();
 			return stack;
 		}
@@ -252,7 +276,7 @@ casbot.stack = function(site, stack, element) {
 		stack.texts[Math.ceil(texts_score)] = uu.trim(text);
 		if (element._parent && element._parent.substr(0,1)!='H') {
 			if (DEBUG) {
-				console.log('### '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,40)+'...   <'+$(element).parent().get(0).tagName+'>');
+				console.log('### '+tag+' [ '+     stack.iteration +' - '+ parseInt(element._children) +' ] '+uu.trim(text).substr(0,120)+'...   <'+$(element).parent().get(0).tagName+'>');
 			}
 			$(element).remove();
 			return stack;
