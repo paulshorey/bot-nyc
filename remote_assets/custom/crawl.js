@@ -1,11 +1,11 @@
-window.DEBUG = true;
+window.DEBUG = false;
 
 if (!window.casbot) {
 	window.casbot = {};
 }
 
 window.casbot.crawl = function(each) {
-	
+
 	// clear more selector which got us here from previous page, to reset at the bottom for next thenClick
 	$('#thenClickSelector').remove();
 	each.selectors = {};
