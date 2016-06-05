@@ -5,9 +5,21 @@ if (!window.casbot) {
 }
 
 casbot.stackTime = function(stack, text) {
+	console.log('# date: '+text);
+	// remove time range to help parsing (8-11pm = 8pm)
+	var match = text.match(/[0-9]+?(-[0-9]{1,2})\ ?(?:am|pm)/i);
+	if (match) {
+		text = text.replace(match[1],'');
+	}
+	// parse
 	var delimiters = /—|-|–|\ to\ |\(|\)|\@/;
 	var strings = text.split(delimiters);
+
 	for (var ea in strings) {
+		if (parseInt(strings[ea])) {
+			continue;
+		}
+		console.log('# '+strings[ea]);
 		var string = uu.trim(strings[ea]);
 		var mmdd = /([0-9]{2}\/[0-9]{2})/;
 		if (string.match(mmdd)) {
@@ -48,6 +60,7 @@ casbot.stackTime = function(stack, text) {
 		}
 
 	}
+	console.log('## '+timestamp);
 	return timestamp;
 }; 
 
@@ -55,7 +68,7 @@ casbot.stack = function(site, stack, element) {
 	
 	// filter
 	var tag = element.tagName;
-	var tags_read = 'p | em | h1 | h2 | h3 | h4 | h5 | h6 | img | video | div | span | sub | sup | summary | pre | nav | dl | dt | form | ul | li | a | ol | th | table | tbody | th | td | blockquote | article | section | main | figure | caption | label | font | footer | header | figcaption'.replace(/\ /g,'').toUpperCase();
+	var tags_read = 'time | p | em | h1 | h2 | h3 | h4 | h5 | h6 | img | video | div | span | sub | sup | summary | pre | nav | dl | dt | form | ul | li | a | ol | th | table | tbody | th | td | blockquote | article | section | main | figure | caption | label | font | footer | header | figcaption'.replace(/\ /g,'').toUpperCase();
 	var tags_delete = 'NOSCRIPT';
 	//var html_regex = new RegExp('/(<['+tags_read+']+)/gi');
 	var tag_regex_read = new RegExp('/'+tags_read+'$/gi');
@@ -67,6 +80,8 @@ casbot.stack = function(site, stack, element) {
 		return stack;
 	}
 	var text = uu.trim(element.innerText.replace(/[\s]+/g, ' '));
+	var text25 = text.toLowerCase().substr(0,25);
+	var text50 = text.toLowerCase().substr(0,50);
 	var length = text.length;
 	// score
 	stack.iteration++;
@@ -106,7 +121,7 @@ casbot.stack = function(site, stack, element) {
 	if (stack.links && tag == 'A' && element.href && element.href.length > 3) {
 		var links_score = score;
 		// ignore text
-		if (/Google Map|=http|twitter|facebook|linkedin|pinterest/i.test(text)) {
+		if (/Google Map|=http|twitter|facebook|linkedin|pinterest/i.test(text50)) {
 			$(element).remove();
 			return stack;
 		}
@@ -140,7 +155,7 @@ casbot.stack = function(site, stack, element) {
 	/*
 		not relevant
 	*/
-	if (/^more|share|show|view|get/i.test(text)) {
+	if (/^more|share|show|view|get|date|event|ongoing/i.test(text25)) {
 		$(element).remove();
 		return stack;
 	}
@@ -155,6 +170,7 @@ casbot.stack = function(site, stack, element) {
 	if (text.length >= 3 && text.length < 100 && ( /[0-9]/.test(text) || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
 		if (
 			/^(Now|Today|Next|Tomorrow)/i.test(text) || 
+			/[0-9]+?-?[0-9]{1,2}\ ?(?:am|pm)/.test(text) ||
 			/[0-9][:]{1}[0-9]{2,}/.test(text) ||
 			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) ||
 			/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(text) ||
@@ -200,7 +216,7 @@ casbot.stack = function(site, stack, element) {
 	if (stack.texts) {
 		var texts_score = score;
 		// ignore single characters
-		if (length<2) {
+		if (length<4) {
 			return stack;
 		}
 		// smoothe
@@ -233,8 +249,7 @@ casbot.stack = function(site, stack, element) {
 
 		// DEMOTE
 		// sold out
-		var search50 = text.toLowerCase().substr(0,50);
-		if (search50.indexOf('sold out')!=-1) {
+		if (text50.indexOf('sold out')!=-1) {
 			score.ignore = true;
 			return stack;
 		}

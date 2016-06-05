@@ -46,6 +46,20 @@ exports.hash_random = function(length) {
 	}
 	return text;
 };
+exports.hash_letters = function(length) {
+	length = parseInt(length);
+	if (!length) {
+		length = 11;
+	}
+	var text = "";
+	var possible = "abcdefghijklmnopqrstuvwxyz";
+	text += possible.charAt(Math.floor(Math.random() * possible.length));
+	possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	for (i = 1; i < length; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+};
 
 exports.to_query_string = function(obj) {
 	var parts = [];

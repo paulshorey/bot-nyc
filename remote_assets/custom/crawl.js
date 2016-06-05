@@ -5,6 +5,7 @@ if (!window.casbot) {
 }
 
 window.casbot.crawl = function(each) {
+	
 	// clear more selector which got us here from previous page, to reset at the bottom for next thenClick
 	$('#thenClickSelector').remove();
 	each.selectors = {};
@@ -29,7 +30,9 @@ window.casbot.crawl = function(each) {
 	}
 
 	// each element
-	if (elements) {
+	if (!elements) {
+		return false;
+	} else {
 		each.items = [];
 		var i = 0;
 		elements.each(function() {
@@ -65,15 +68,12 @@ window.casbot.crawl = function(each) {
 				for (var c in each.site.selectors.item_dates) {
 					stack.inverse = Object.keys(each.site.selectors.item_dates).length - stack.index;
 					try {
-						//var toEval = "$(this).prevAll('tr').find('.fblack').first()";
-						var elem = $(this).prevAll('.fblack');
+						var elem = eval('$(this)'+each.site.selectors.item_dates[c]);
 					} catch(e) {
 						var elem = $(this).find(each.site.selectors.item_dates[c]);
-						console.log('# :*(');
 					}
 					if (elem.length) {
-						//console.log('## '+toEval);
-						console.log('## '+elem.length);
+						// use
 						var timestamp = casbot.stackTime(stack, elem[0].innerText);
 						if (!timestamp) {
 							console.log('### Manual date selector did not work');
@@ -91,19 +91,21 @@ window.casbot.crawl = function(each) {
 				for (var c in each.site.selectors.item_prices) {
 					stack.inverse = Object.keys(each.site.selectors.item_prices).length - stack.index;
 					try {
-						//var toEval = "$(this).prevAll('tr').find('.fblack').first()";
-						var elem = $(this).prevAll('.fblack');
+						var elem = eval('$(this)'+each.site.selectors.item_prices[c]);
 					} catch(e) {
 						var elem = $(this).find(each.site.selectors.item_prices[c]);
-						console.log('# :*(');
 					}
 					if (elem.length) {
-						//console.log('## '+toEval);
-						console.log('## '+elem.length);
-						var timestamp = casbot.stackTime(stack, elem[0].innerText);
-						if (!timestamp) {
-							console.log('### Manual price selector did not work');
+						var prices = elem[0].innerText.match(/(\$[0-9\,\.]+)/); // match
+						if (prices && prices[1]) {
+							prices = prices[1].split(/-|\ /); // match first only
+							for (var p in prices) { // in case first is accidentally multiple, separate them
+								var score = parseInt(prices[p].replace(/[^0-9]/g, ""))||0;
+								// use
+								stack.prices[score] = prices[p];
+							}
 						}
+						
 					}
 					stack.index++;
 				}
@@ -380,6 +382,9 @@ window.casbot.crawl = function(each) {
 			if (stack.ignore) {
 				play.score = 0;
 			}
+			if (!play.time) {
+				play.score == 0;
+			}
 			if (!play.texts[0]) {
 				play.score = 0;
 			}
@@ -394,17 +399,13 @@ window.casbot.crawl = function(each) {
 			if (!play.links.length>4) {
 				play.score -= 1;
 			}
-			if (!play.time) {
-				play.score -= 1;
-			}
 
 			///////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////////
 			// VIEW
 			///////////////////////////////////////////////////////////////////
 			if (DEBUG) {
-				console.log('# '+(JSON.stringify(stack,null,'\t')));
-				console.log('## '+(JSON.stringify(play,null,'\t')));
+				console.log('# stack = '+(JSON.stringify(stack,null,'\t')));
 			}
 
 			///////////////////////////////////////////////////////////////////
@@ -499,6 +500,8 @@ window.casbot.crawl = function(each) {
 			// coming soon
 		}
 	}
+
+	console.log('## items = '+(JSON.stringify(each.items,null,'\t')));
 
 	// next site
 	return each;

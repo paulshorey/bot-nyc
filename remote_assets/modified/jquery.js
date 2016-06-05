@@ -3765,6 +3765,9 @@ window.jQuery.fn.reverse = [].reverse;
 if (!window.$) {
 	window.$ = window.jQuery;
 }
+if (!window.jQuery) {
+	window.jQuery = window.$;
+}
 
 // break Prototype library:?
 // if (window.$$) {

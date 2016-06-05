@@ -35,7 +35,6 @@
 		"iteration":0
 	};
 	if (OS.name=='mac') {
-		//CONFIG.crawl_only = 'eventful.com/concerts'; // set in command: --only=link_fragment_match
 		CONFIG.api_host = 'http://localhost:1080';
 	}
 	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
@@ -43,13 +42,12 @@
 	CONFIG.path_root = CONFIG.path_root.join('/');
 
 	var CASPER = require('casper').create({
-		waitTimeout: 10000,
-		stepTimeout: 1000,
-		retryTimeout: 100,
+		waitTimeout: 20000,
+		stepTimeout: 2000,
+		retryTimeout: 200,
 		verbose: true,
 		exitOnError: false,
-		//logLevel: 'debug',
-		log_statuses: ['warning', 'error', 'info','log','debug'],
+		log_statuses: ['warning', 'error', 'info','log'],
 		viewportSize: {
 			width: 1440,
 			height: 900
@@ -57,7 +55,7 @@
 		pageSettings: {
 			"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
 			"loadImages": true,
-			"loadPlugins": false,
+			"loadPlugins": true,
 			"webSecurityEnabled": false,
 			"ignoreSslErrors": true
 		},
@@ -88,34 +86,45 @@
 	});
 	// events
 	CASPER.on("page.error", function(error, notes) {
-		CASPER.console.error('		Error: ' + JSON.stringify(error, null, " ") + '\n' + JSON.stringify(notes[0], null, " "), 'error');
+		if (CONFIG.test) {
+			CASPER.console.error('		Error: ' + JSON.stringify(error, null, " ") + '\n' + JSON.stringify(notes[0], null, " "), 'error');
+		}
 	});
 	CASPER.on('http.status.404', function(resource) {
-		CASPER.console.error('		404 error: ' + resource.url, 'error');
+		if (CONFIG.test) {
+			CASPER.console.error('		404 error: ' + resource.url, 'error');
+		}
 	});
 	CASPER.on('http.status.500', function(resource) {
-		CASPER.console.error('		500 error: ' + resource.url, 'error');
+		if (CONFIG.test) {
+			CASPER.console.error('		500 error: ' + resource.url, 'error');
+		}
 	});
 	CASPER.on('complete.error', function(err) {
-		CASPER.die("		Complete callback has failed: " + err);
+		if (CONFIG.test) {
+			CASPER.die("		Complete callback has failed: " + err);
+		}
 	});
 	CASPER.on('remote.message', function(msg, etc) {
-		// ignore site's console.logs, only show ours
-		if (msg.substr(0,3)=='###') {
-			msg = msg.substr(4);
-			CASPER.console.warn('		' + msg, 'error');
-		}
-		// ignore site's console.logs, only show ours
-		if (msg.substr(0,2)=='##') {
-			msg = msg.substr(3);
-			CASPER.console.info('		' + msg, 'error');
-		}
-		if (msg.substr(0,2)=='# ') {
-			msg = msg.substr(2);
-			CASPER.console.log('		' + msg, 'error');
+		if (CONFIG.test) {
+			// ignore site's console.logs, only show ours
+			if (msg.substr(0,3)=='###') {
+				msg = msg.substr(4);
+				CASPER.console.warn('		' + msg);
+			}
+			// ignore site's console.logs, only show ours
+			if (msg.substr(0,2)=='##') {
+				msg = msg.substr(3);
+				CASPER.console.info('		' + msg);
+			}
+			if (msg.substr(0,2)=='# ') {
+				msg = msg.substr(2);
+				CASPER.console.log('		' + msg);
+			}
 		}
 	});
 	CASPER.on('error', function(msg, backtrace) {
+		// this is a casper error, not remote
 		CASPER.console.error(msg);
 	});
 	CASPER.on('run.complete', function() {
@@ -135,10 +144,6 @@
 		if (CASPER.console.date != DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate())) {
 			CASPER.console.html = '';
 			CASPER.console.date = DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate());
-		}
-		// skip banal debug logs
-		if (status=='debug') {
-			return false;
 		}
 		// format
 		if (typeof message == 'object') {
@@ -164,15 +169,6 @@
 			'w'
 		);
 		// to CONSOLE
-		if (status == 'error') {
-			message = message;
-		} else if (status == 'warning') {
-			message = message;
-		} else if (status == 'info') {
-			message = message;
-		} else if (status == 'debug') {
-			message = message;
-		}
 		CASPER.echo(message, status.toUpperCase());
 	};
 	CASPER.console.log = function(message) {
@@ -195,52 +191,74 @@
 	if (CASPER.cli.has("iteration")) {
 		CONFIG.iteration = CASPER.cli.get("iteration");
 	}
-	if (CASPER.cli.has("only")) {
-		CONFIG.crawl_only = CASPER.cli.get("only");
+	if (CASPER.cli.has("test")) {
+		CONFIG.test = CASPER.cli.get("test");
+	}
+	if (CASPER.cli.has("list")) {
+		CONFIG.list = CASPER.cli.get("list");
 	}
 
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 	//CASPER.console.log(OS.name);
 
+
 /*
 	4. POST
 */
 var BOT = {};
+var POSTERS = {};
 BOT.post = function(url, data) {
-
-	var POSTER = require('casper').create({
-		waitTimeout: 10000,
-		stepTimeout: 1000,
-		retryTimeout: 100,
-		verbose: true,
-		exitOnError: false,
-		onWaitTimeout: function(timeout, step) {
-		},
-		onStepTimeout: function(timeout, step) {
-		},
-		onResourceReceived: function(timeout, step) {
-		},
-	});
-	POSTER.start();
-	POSTER.thenOpen(url, {
-		method: 'post',
-		data: JSON.stringify(data, null, '\t'),
-		encoding: 'utf8',
-		headers: {
-			'Content-type': 'application/json; charset=utf-8'
-		}
-	}, function(headers) {
-
-		POSTER.waitFor(function() {
-			return POSTER.evaluate(function() {
-				window.console.log('## POSTED to /site');
-				return true;
+	if (data.items.length) {
+		try {
+			var pid = FUN.hash_letters(11);
+			POSTERS[pid] = require('casper').create({
+				waitTimeout: 20000,
+				stepTimeout: 2000,
+				retryTimeout: 200,
+				verbose: true,
+				exitOnError: false,
+				onStepTimeout: function(timeout, step) {
+					if (POSTERS[pid]) {
+						CASPER.console.warn('Failed: '+data.items.length+' items at '+data.items[0].source_link);
+						CASPER.console.log(' ');
+						delete POSTERS[pid];
+					}88
+				},
+				onStepComplete: function(timeout, step) {
+					if (POSTERS[pid]) {
+						CASPER.console.info('Saved '+data.items.length+' items for site '+data.items[0].source_link);
+						CASPER.console.log(' ');
+						delete POSTERS[pid];
+					}
+				}
 			});
-		});
-		CASPER.console.info('POSTED to /site');
+			POSTERS[pid].start();
+			POSTERS[pid].thenOpen(
+				url, 
+				{
+					method: 'post',
+					data: JSON.stringify(data, null, '\t'),
+					encoding: 'utf8',
+					headers: {
+						'Content-type': 'application/json; charset=utf-8'
+					}
+				}, function(headers) {
+					CASPER.console.info('POST headers:');
+					CASPER.console.info(JSON.stringify(headers));
+					POSTERS[pid].waitFor(function() {
+						return POSTERS[pid].evaluate(function() {
+							return true;
+						});
+					});
+				}
+			);
+			POSTERS[pid].run();
 
-	});
-	POSTER.run();
+		} catch(e) {
+		}
+	} else {
+		CASPER.console.warn('POST ? no data ? '+JSON.stringify(data));
+	}
 
 }
 
@@ -302,10 +320,11 @@ BOT.save = function(error) {
 		BOT.post(CONFIG.api_host+'/items', post);
 
 		CRAWLED[ EACH.site.link ] = post.items.length;
-		CASPER.console.warn('Saved '+post.items.length+' items for site '+EACH.site.link);
+		CASPER.console.info('Post '+post.items.length+' items');
 		
 	} else {
-		CASPER.console.warn(JSON.stringify(error));
+		CASPER.console.error('Post failed: '+error+'');
+		CASPER.console.log(' ');
 	}
 
 };
@@ -316,10 +335,10 @@ BOT.save = function(error) {
 BOT.wait = function(){
 	// limit
 	EACH.waited++;
-	CASPER.console.warn('waiting '+EACH.waited);
 	if (EACH.waited>3) {
 		return false;
 	}
+	CASPER.console.log('Waiting '+EACH.waited);
 
 	// start
 	CASPER.waitFor(function() {
@@ -330,7 +349,7 @@ BOT.wait = function(){
 				return false;
 			}
 			return window.casbot.crawl(each);
-		},EACH);
+		}, EACH);
 
 		// EACH evaluated
 		if (each && each.items && each.items.length) {
@@ -342,18 +361,17 @@ BOT.wait = function(){
 
 		// SAVE items
 		BOT.save(data);
-		CASPER.wait(1100);
 
 		// MORE items
 		if (EACH.selectors.more) {
-			CASPER.console.log('more = "'+EACH.selectors.more+'"');
 			CASPER.thenClick(EACH.selectors.more, function(){
 				BOT.wait();
 			});
 		}
 		
-	}, function(data) {
-		CASPER.console.error('BOT.wait: '+EACH.waited);
+	}, function(error) {
+		CASPER.console.error('Read failed: '+error+'');
+		CASPER.console.log(' ');
 	}, 
 	10100 );
 
@@ -387,21 +405,24 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 		EACH.waited = 0;
 		EACH.site = response.data;
 
-		// OK GO
-		if (
-		    ( !CRAWLED[ EACH.site.link ] ) && 
-		    ( !CONFIG.crawl_only || EACH.site.link.indexOf(CONFIG.crawl_only)>=0 ) 
-		) {
-
-			// CASPER.console.info('EACH.site.host: ' + EACH.site.host );
-			// CASPER.console.log('EACH.site.link: ' + EACH.site.link );
-			// CASPER.console.log('EACH.site.selectors.item: ' + EACH.site.selectors.item );
-			// CASPER.console.log('EACH.site.selectors.dates: ' + JSON.stringify(EACH.site.selectors.dates) );
-			// CASPER.console.log('EACH.site.selectors.more: ' + EACH.site.selectors.more );
-
+		// GO
+		if (!CONFIG.list && !CONFIG.test && !CRAWLED[ EACH.site.link ]) {
+			// all
+			CASPER.console.log('\nOpening... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();
+				CASPER.wait(5000);
 			});
+		} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test)!=-1) {
+			// one
+			CASPER.console.log('\nOpening... ' + JSON.stringify(EACH.site) );
+			CASPER.thenOpen(EACH.site.link, function(headers) {
+				BOT.wait();
+				CASPER.wait(5000);
+			});
+		} else if (CONFIG.list) {
+			// none -- list only
+			CASPER.console.log('\nOpening... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
 		}
 
 	});
