@@ -212,9 +212,9 @@ BOT.post = function(url, data) {
 		try {
 			var pid = FUN.hash_letters(11);
 			POSTERS[pid] = require('casper').create({
-				waitTimeout: 20000,
-				stepTimeout: 2000,
-				retryTimeout: 200,
+				waitTimeout: 50000,
+				stepTimeout: 5000,
+				retryTimeout: 500,
 				verbose: true,
 				exitOnError: false,
 				onStepTimeout: function(timeout, step) {
@@ -222,7 +222,7 @@ BOT.post = function(url, data) {
 						CASPER.console.warn('Failed: '+data.items.length+' items at '+data.items[0].source_link);
 						CASPER.console.log(' ');
 						delete POSTERS[pid];
-					}88
+					}
 				},
 				onStepComplete: function(timeout, step) {
 					if (POSTERS[pid]) {
@@ -341,39 +341,41 @@ BOT.wait = function(){
 	CASPER.console.log('Waiting '+EACH.waited);
 
 	// start
-	CASPER.waitFor(function() {
+	CASPER.waitFor(
+		function() {
 
-		// each evaluate
-		var each = CASPER.evaluate(function(each) {
-			if (!window.casbot) {
-				return false;
+			// each evaluate
+			var each = CASPER.evaluate(function(each) {
+				if (!window.casbot) {
+					return false;
+				}
+				return window.casbot.crawl(each);
+			}, EACH);
+
+			// EACH evaluated
+			if (each && each.items && each.items.length) {
+				EACH = each;
+				return true;
 			}
-			return window.casbot.crawl(each);
-		}, EACH);
 
-		// EACH evaluated
-		if (each && each.items && each.items.length) {
-			EACH = each;
-			return true;
-		}
+		}, function(data) {
 
-	}, function(data) {
+			// SAVE items
+			BOT.save(data);
 
-		// SAVE items
-		BOT.save(data);
-
-		// MORE items
-		if (EACH.selectors.more) {
-			CASPER.thenClick(EACH.selectors.more, function(){
-				BOT.wait();
-			});
-		}
-		
-	}, function(error) {
-		CASPER.console.error('Read failed: '+error+'');
-		CASPER.console.log(' ');
-	}, 
-	10100 );
+			// MORE items
+			if (EACH.selectors.more) {
+				CASPER.thenClick(EACH.selectors.more, function(){
+					BOT.wait();
+				});
+			}
+			
+		}, function(error) {
+			CASPER.console.error('Read failed: '+error+'');
+			CASPER.console.log(' ');
+		}, 
+		22222 
+	);
 
 };
 
@@ -411,14 +413,14 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 			CASPER.console.log('\nOpening... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();
-				CASPER.wait(5000);
+				CASPER.wait(1111);
 			});
 		} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test)!=-1) {
 			// one
 			CASPER.console.log('\nOpening... ' + JSON.stringify(EACH.site) );
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();
-				CASPER.wait(5000);
+				CASPER.wait(1111);
 			});
 		} else if (CONFIG.list) {
 			// none -- list only
