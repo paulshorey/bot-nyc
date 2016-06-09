@@ -1,11 +1,8 @@
-//console.log('# parse.js');
-
 if (!window.casbot) {
 	window.casbot = {};
 }
 
 casbot.stackTime = function(stack, text) {
-	console.log('# date: '+text);
 	// remove time range to help parsing (8-11pm = 8pm)
 	var match = text.match(/[0-9]+?(-[0-9]{1,2})\ ?(?:am|pm)/i);
 	if (match) {
@@ -19,7 +16,6 @@ casbot.stackTime = function(stack, text) {
 		if (parseInt(strings[ea])) {
 			continue;
 		}
-		console.log('# '+strings[ea]);
 		var string = uu.trim(strings[ea]);
 		var mmdd = /([0-9]{2}\/[0-9]{2})/;
 		if (string.match(mmdd)) {
@@ -55,12 +51,13 @@ casbot.stackTime = function(stack, text) {
 				stack.dates[timestamp] = string;
 			// past
 			} else {
-				throw 'Date is in the past  ['+timestamp+'] <= '+string+'';
+				if (DEBUG) {
+					console.log('### Date is in the past  ['+timestamp+'] <= '+string+'');
+				}
 			}
 		}
 
 	}
-	console.log('## '+timestamp);
 	return timestamp;
 }; 
 
@@ -366,15 +363,6 @@ casbot.scrollBottom = function(){
 };
 
 casbot.scroll = function(){
-
-	// window.document.body.scrollTop = Math.min( window.document.body.scrollTop+100,  $(document).height()-$(window).height() ) ;
-	// console.log('## "'+window.location.href+'" scroll='+window.document.body.scrollTop);
-	// $(window).ajaxSend(function() {
-	// 	console.log('## ajaxSend');
-	// });
-	// $(window).ajaxComplete(function() {
-	// 	console.log('## ajaxComplete');
-	// });
 	
 	// target
 	var hash = window.location.hash.substr(1);
