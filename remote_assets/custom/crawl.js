@@ -536,7 +536,7 @@ window.casbot.crawl = function(each) {
 				item.category = '';
 				for (var sc in each.site.categories) {
 					var category = each.site.categories[sc];
-					item.category += ' '+category.title+' ';
+					item.category += ''+category.title+'';
 				}
 				item.source = each.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
