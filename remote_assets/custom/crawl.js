@@ -531,12 +531,12 @@ window.casbot.crawl = function(each) {
 				item.scene = '';
 				for (var sc in each.site.scenes) {
 					var scene = each.site.scenes[sc];
-					item.scene += '<span>'+scene.title+'</span> ';
+					item.scene += ''+scene.title+'';
 				}
 				item.category = '';
 				for (var sc in each.site.categories) {
 					var category = each.site.categories[sc];
-					item.category += '<span>'+category.title+'</span> ';
+					item.category += ' '+category.title+' ';
 				}
 				item.source = each.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');
