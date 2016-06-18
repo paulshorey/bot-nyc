@@ -73,11 +73,13 @@ window.casbot.crawl = function(each) {
 				} catch(e) {
 					var elem = $(this).find(each.site.selectors.item_dates[c]);
 				}
-				for (var e in elem) {
-					// use
-					var timestamp = casbot.stackTime(stack, elem[0].innerText);
-					if (!timestamp) {
-						console.log('### Manual date selector did not work');
+				if (elem.length) {
+					for (var e in elem) {
+						// use
+						var timestamp = casbot.stackTime(stack, elem[0].innerText);
+						if (!timestamp) {
+							console.log('### Manual date selector did not work');
+						}
 					}
 				}
 				stack.index++;
