@@ -3,7 +3,7 @@ if (!window.casbot) {
 }
 
 window.casbot.crawl = function(each) {
-	window.DEBUG = each.DEBUG;
+	window.DEBUG = each.DEBUG = true;
 	window.CONFIG = each.CONFIG;
 
 	// clear more selector which got us here from previous page, to reset at the bottom for next thenClick
