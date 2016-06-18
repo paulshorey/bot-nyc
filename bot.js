@@ -179,7 +179,10 @@
 		DEBUG = true;
 	}
 
-	CASPER.reportErrors = function (f) {
+	CASPER.console.error = function(message) {
+		CASPER.console.write(message, 'error');
+	}
+	CASPER.reportErrors = function(f) {
 	  var ret = null;
 	  try {
 	    ret = f.call(this);
@@ -188,7 +191,7 @@
 	    this.exit();
 	  }
 	  return ret;
-	};
+	}
 
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 	//CASPER.console.log(OS.name);
@@ -238,7 +241,7 @@ BOT.wait = function(){
 				CASPER.thenClick(EACH.selectors.more, function(){
 					CASPER.reportErrors(function() {
 						BOT.wait();
-					}
+					});
 				});
 			}
 			
@@ -286,7 +289,7 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 				CASPER.thenOpen(EACH.site.link, function(headers) {
 					CASPER.reportErrors(function() {
 						BOT.wait();
-					}
+					});
 				});
 			} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test || CONFIG.squash)!=-1) {
 				// one - to test
@@ -294,7 +297,7 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 				CASPER.thenOpen(EACH.site.link, function(headers) {
 					CASPER.reportErrors(function() {
 						BOT.wait();
-					}
+					});
 				});
 			} else if (CONFIG.list) {
 				// none -- list only
@@ -303,6 +306,6 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 
 		});
 
-	}
+	});
 });
 CASPER.run();
