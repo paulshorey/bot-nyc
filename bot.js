@@ -1,7 +1,7 @@
 // UPPERCASE global scope
 // same bot.js as go.js
 
-	var DEBUG = true;
+	var DEBUG = false;
 	var SYSTEM = require('system');
 	var OS = SYSTEM.os;
 	var DT = new Date();

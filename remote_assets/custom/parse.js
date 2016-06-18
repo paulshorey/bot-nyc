@@ -23,24 +23,14 @@ casbot.stackTime = function(stack, text) {
 		if (!string) {
 			continue;
 		}
-		try {
-			var mmdd = /([0-9]{2}\/[0-9]{2})/;
-			if (string.match(mmdd)) {
-				string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
-			}
-			console.log('## stackTime string: '+string);
-		} catch(e) {
-			console.log('### stackTime string failed');
+		var mmdd = /([0-9]{2}\/[0-9]{2})/;
+		if (string.match(mmdd)) {
+			string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
 		}
 		// is date?
-		try {
-			var timestamp = Date.parse(Date.create(string));
-			if (string.toLowerCase().substr(0,3) == 'now') {
-				timestamp = stack.timeToday;
-			}
-			console.log('## stackTime timestamp: '+timestamp);
-		} catch(e) {
-			console.log('### stackTime timestamp failed');
+		var timestamp = Date.parse(Date.create(string));
+		if (string.toLowerCase().substr(0,3) == 'now') {
+			timestamp = stack.timeToday;
 		}
 		if (!timestamp) {
 			var strs = string.split(/\ |,|\'|\"/);

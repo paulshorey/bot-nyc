@@ -592,6 +592,17 @@ window.casbot.crawl = function(each) {
 			data: post,
 			dataType: 'json'
 		});
+		// temp
+		// also save on server
+		if (CONFIG.api_host.indexOf('localhost')!=-1) {
+			$.ajax({
+				type: 'POST',
+				url: 'http://api.allevents.nyc/items',
+				crossDomain: true,
+				data: post,
+				dataType: 'json'
+			});
+		}
 		
 
 		return each;
