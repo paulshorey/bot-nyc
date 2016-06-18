@@ -271,14 +271,12 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 			CASPER.console.log('\nOpening all... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();
-				CASPER.wait(1111);
 			});
 		} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test || CONFIG.squash)!=-1) {
 			// one - to test
 			CASPER.console.log('\nOpening test... ' + JSON.stringify(EACH.site) );
 			CASPER.thenOpen(EACH.site.link, function(headers) {
 				BOT.wait();
-				CASPER.wait(1111);
 			});
 		} else if (CONFIG.list) {
 			// none -- list only

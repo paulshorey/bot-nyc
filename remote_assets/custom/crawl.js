@@ -583,25 +583,14 @@ window.casbot.crawl = function(each) {
 		if (DEBUG) {
 			console.log(pre+' '+JSON.stringify(post));
 		}
-		// send
-		$.ajax({
-			type: 'POST',
-			url: CONFIG.api_host+'/items',
-			crossDomain: true,
-			data: post,
-			dataType: 'json'
-		});
-		// temp
-		// also save on server
-		if (CONFIG.api_host.indexOf('localhost')!=-1) {
-			$.ajax({
-				type: 'POST',
-				url: 'http://api.allevents.nyc/items',
-				crossDomain: true,
-				data: post,
-				dataType: 'json'
-			});
-		}
+		// // send
+		// $.ajax({
+		// 	type: 'POST',
+		// 	url: CONFIG.api_host+'/items',
+		// 	crossDomain: true,
+		// 	data: post,
+		// 	dataType: 'json'
+		// });
 		
 
 		return each;

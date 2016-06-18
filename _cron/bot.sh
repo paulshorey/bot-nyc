@@ -6,7 +6,7 @@ cd /www/bot-nyc
 git reset HEAD -\-hard;
 git pull
 
-#casperjs bot.js
+casperjs bot.js
 
 # i=0;
 # while true; do
