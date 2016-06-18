@@ -17,6 +17,9 @@ casbot.stackTime = function(stack, text) {
 			continue;
 		}
 		var string = uu.trim(strings[ea]);
+		if (!string) {
+			continue;
+		}
 		var mmdd = /([0-9]{2}\/[0-9]{2})/;
 		if (string.match(mmdd)) {
 			string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
@@ -66,12 +69,12 @@ casbot.stack = function(site, stack, element) {
 	// filter
 	var tag = element.tagName;
 	var tags_read = 'time | p | em | h1 | h2 | h3 | h4 | h5 | h6 | img | video | div | span | sub | sup | summary | pre | nav | dl | dt | form | ul | li | a | ol | th | table | tbody | th | td | blockquote | article | section | main | figure | caption | label | font | footer | header | figcaption'.replace(/\ /g,'').toUpperCase();
-	var tags_delete = 'NOSCRIPT';
+	var tags_delete = 'script | noscript | code'.replace(/\ /g,'').toUpperCase();
 	//var html_regex = new RegExp('/(<['+tags_read+']+)/gi');
 	var tag_regex_read = new RegExp('/'+tags_read+'$/gi');
 	var tag_regex_delete = new RegExp('/'+tags_delete+'$/gi');
-	if (!tag_regex_read.test(tag)) {
-		if (tag_regex_delete.test(tag)){
+	if (!tag_regex_read.test(tag)) { // ignore
+		if (tag_regex_delete.test(tag)){ // then delete
 			$(element).remove();
 		}
 		return stack;
@@ -89,7 +92,10 @@ casbot.stack = function(site, stack, element) {
 	/*
 		images
 	*/
-	if (stack.images && tag=='IMG' && element.src && element.src.toLowerCase().indexOf('.jpg')!=-1) {
+	if (stack.images && tag=='IMG' && element.src) {
+		if (/\.png|\.gif/i.test(element.src)) {
+			return stack;
+		}
 		var images_score = score;
 		images_score *= ($(element).width()||10)/10;
 		stack.images[Math.ceil(images_score)] = element.src;
@@ -166,14 +172,16 @@ casbot.stack = function(site, stack, element) {
 	*/
 	if (text.length >= 3 && text.length < 100 && ( /[0-9]/.test(text) || /^(Now|Today|Next|Tomorrow)/i.test(text) ) ) {
 		if (
-			/^(Now|Today|Next|Tomorrow)/i.test(text) || 
-			/[0-9]+?-?[0-9]{1,2}\ ?(?:am|pm)/.test(text) ||
-			/[0-9][:]{1}[0-9]{2,}/.test(text) ||
-			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) ||
+			/^(Now|Today|Next|Tomorrow)/i.test(text) || // now playing
+			/[0-9]{1,2}\ ?(?:am|pm)/.test(text) || // 9pm
+			/[0-9][:]{1}[0-9]{2,}/.test(text) || // 6:30
+			/[0-9]{2}[,\ \/]{1,2}[0-9]{2,}/.test(text) || // 5/16
 			/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(text) ||
 			/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(text) ||
+			/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/.test(text) ||
 			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
+			console.log('# '+text);
 			var timestamp = casbot.stackTime(stack, text);
 			if (timestamp) {
 				$(element).remove();

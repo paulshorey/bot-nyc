@@ -73,7 +73,7 @@ window.casbot.crawl = function(each) {
 				} catch(e) {
 					var elem = $(this).find(each.site.selectors.item_dates[c]);
 				}
-				if (elem.length) {
+				for (var e in elem) {
 					// use
 					var timestamp = casbot.stackTime(stack, elem[0].innerText);
 					if (!timestamp) {
@@ -275,7 +275,6 @@ window.casbot.crawl = function(each) {
 		// PLAY CARDS
 		///////////////////////////////////////////////////////////////////
 		var play = {};
-		play.score = 100;
 		play.images = [];
 		play.links = [];
 		play.dates = [];
@@ -353,6 +352,10 @@ window.casbot.crawl = function(each) {
 		for (var k in keys) {
 			var card = keys[k];
 			var link = stack.links[card];
+			if (!link) {
+				delete stack.links[card];
+				continue;
+			}
 			// absolute
 			if (link.indexOf(each.site.host)===0) {
 				play.links.push(link);
@@ -373,6 +376,10 @@ window.casbot.crawl = function(each) {
 		for (var k in keys) {
 			var card = keys[k];
 			var img = stack.images[card];
+			if (!img) {
+				delete stack.images[card];
+				continue;
+			}
 			if (img.substr(0,1)=='/' || img.substr(0,1)=='?') {
 				img = each.site.host+img;
 			}
@@ -380,10 +387,12 @@ window.casbot.crawl = function(each) {
 		}
 
 		// score
+		play.score = 100;
+
 		if (stack.ignore) {
 			play.score = 0;
 		}
-		if (!play.time) {
+		if (!play.dates[0]) {
 			play.score == 0;
 		}
 		if (!play.texts[0]) {
@@ -391,13 +400,8 @@ window.casbot.crawl = function(each) {
 		}
 		if (play.texts.join().length<20) {
 			play.score -= 1;
-		} else {
-			play.score += 1;
 		}
 		if (!play.links[0]) {
-			play.score -= 1;
-		}
-		if (!play.links.length>4) {
 			play.score -= 1;
 		}
 
@@ -516,13 +520,16 @@ window.casbot.crawl = function(each) {
 			// MODEL
 			// item temporary stack
 			var its = each.items[it];
+			if (!its.texts) {
+				continue;
+			}
 			//CASPER.console.warn(JSON.stringify(its,null,'\t'));
 			// item
 			var item = {};
 				item.texts = its.texts.splice(0,3);
 				item.image = its.images[0] || '';
 				item.link = its.links[0] || each.site.link;
-				item.timestamp = its.time;
+				item.time_stamp = its.time;
 				item.featured_images = its.featured_images;
 				item.featured = its.featured;
 				item.time = its.times[0];
@@ -531,12 +538,18 @@ window.casbot.crawl = function(each) {
 				item.scene = '';
 				for (var sc in each.site.scenes) {
 					var scene = each.site.scenes[sc];
-					item.scene += ''+scene.title+'';
+					if (!scene.title) {
+						continue;
+					}
+					item.scene += uu.capitalize(scene.title)+' ';
 				}
 				item.category = '';
 				for (var sc in each.site.categories) {
 					var category = each.site.categories[sc];
-					item.category += ''+category.title+'';
+					if (!category.title) {
+						continue;
+					}
+					item.category += uu.capitalize(category.title)+' ';
 				}
 				item.source = each.site.title;
 				item.source = item.source.split(' | ').reverse().join(' | ');

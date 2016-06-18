@@ -84,6 +84,9 @@ uu.pad_ends = function(num, front, back) {
 
 // trim whitespace before/after
 uu.trim = function(str){
+	if (!str.replace) {
+		return null;
+	}
 	str = str.replace(/(^[^\$\#a-zA-Z0-9\(\)\?\!\.]*)|([^a-zA-Z0-9\(\)\?\!\.]*$)/g, '');
 	return str;
 };
@@ -175,6 +178,11 @@ uu.deep_map = function(obj, f, ctx) {
 	} else {
 	    return obj;
 	}
+};
+
+uu.capitalize = function(str) {
+	str = str.toLowerCase();
+	return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 

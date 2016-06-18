@@ -200,7 +200,7 @@ BOT.wait = function(){
 
 			// EACH meta
 			EACH.CONFIG = CONFIG; // for evaluate post, call local or remote api
-			EACH.DEBUG = DEBUG; // enable console.log s
+			EACH.DEBUG = DEBUG = true; // enable console.log s
 			EACH.crawled = 0; // for this, allow duplicate call if didn't get results first time
 
 			// each evaluate
