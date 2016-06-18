@@ -26,8 +26,9 @@
 		stepTimeout: 2000,
 		retryTimeout: 200,
 		verbose: true,
+		logLevel: 'debug',
 		exitOnError: false,
-		log_statuses: ['warning', 'error', 'info','log'],
+		log_statuses: ['warning', 'error', 'info','log','debug'],
 		viewportSize: {
 			width: 1440,
 			height: 900
