@@ -3,6 +3,9 @@ if (!window.casbot) {
 }
 
 casbot.stackTime = function(stack, text) {
+	if (!text) {
+		return false;
+	}
 	// remove time range to help parsing (8-11pm = 8pm)
 	var match = text.match(/[0-9]+?(-[0-9]{1,2})\ ?(?:am|pm)/i);
 	if (match) {
@@ -20,14 +23,24 @@ casbot.stackTime = function(stack, text) {
 		if (!string) {
 			continue;
 		}
-		var mmdd = /([0-9]{2}\/[0-9]{2})/;
-		if (string.match(mmdd)) {
-			string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
+		try {
+			var mmdd = /([0-9]{2}\/[0-9]{2})/;
+			if (string.match(mmdd)) {
+				string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
+			}
+			console.log('## stackTime string: '+string);
+		} catch(e) {
+			console.log('### stackTime string failed');
 		}
 		// is date?
-		var timestamp = Date.parse(Date.create(string));
-		if (string.toLowerCase().substr(0,3) == 'now') {
-			timestamp = stack.timeToday;
+		try {
+			var timestamp = Date.parse(Date.create(string));
+			if (string.toLowerCase().substr(0,3) == 'now') {
+				timestamp = stack.timeToday;
+			}
+			console.log('## stackTime timestamp: '+timestamp);
+		} catch(e) {
+			console.log('### stackTime timestamp failed');
 		}
 		if (!timestamp) {
 			var strs = string.split(/\ |,|\'|\"/);
@@ -181,7 +194,6 @@ casbot.stack = function(site, stack, element) {
 			/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/.test(text) ||
 			/(Today|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(text)
 		) {
-			console.log('# '+text);
 			var timestamp = casbot.stackTime(stack, text);
 			if (timestamp) {
 				$(element).remove();
