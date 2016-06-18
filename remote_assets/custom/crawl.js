@@ -399,7 +399,7 @@ window.casbot.crawl = function(each) {
 		if (!play.texts[0]) {
 			play.score = 0;
 		}
-		if (play.texts.join().length<20) {
+		if (!play.texts[0] && play.texts.join().length<20) {
 			play.score -= 1;
 		}
 		if (!play.links[0]) {
