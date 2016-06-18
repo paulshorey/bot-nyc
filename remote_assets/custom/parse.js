@@ -3,68 +3,7 @@ if (!window.casbot) {
 }
 
 casbot.stackTime = function(stack, text) {
-	if (!text) {
-		return false;
-	}
-	// remove time range to help parsing (8-11pm = 8pm)
-	var match = text.match(/[0-9]+?(-[0-9]{1,2})\ ?(?:am|pm)/i);
-	if (match) {
-		text = text.replace(match[1],'');
-	}
-	// parse
-	var delimiters = /—|-|–|\ to\ |\(|\)|\@/;
-	var strings = text.split(delimiters);
-
-	for (var ea in strings) {
-		if (parseInt(strings[ea])) {
-			continue;
-		}
-		var string = uu.trim(strings[ea]);
-		if (!string) {
-			continue;
-		}
-		var mmdd = /([0-9]{2}\/[0-9]{2})/;
-		if (string.match(mmdd)) {
-			string = string.replace(mmdd,'$1/'+(Date.create().format('{yyyy}')));
-		}
-		// is date?
-		var timestamp = Date.parse(Date.create(string));
-		if (string.toLowerCase().substr(0,3) == 'now') {
-			timestamp = stack.timeToday;
-		}
-		if (!timestamp) {
-			var strs = string.split(/\ |,|\'|\"/);
-			for (var ea in strs) {
-				strs.pop();
-				var str = strs.join(' ');
-				timestamp = Date.parse(Date.create(str));
-				if (timestamp) {
-					break;
-				}
-			}
-		}
-		
-		// yes!
-		if (timestamp) {
-			// date & time, today
-			if (/[a-zA-Z]{3,}/.test(string) && timestamp > stack.timeToday) {
-				stack.dates[timestamp] = string;
-			// time, not sure if today or later, possibly date and time
-			} else if (timestamp > stack.timeToday && timestamp < stack.timeTomorrow) {
-				stack.times[timestamp] = string;
-			// date, today or in the future
-			} else if (timestamp == stack.timeToday || timestamp > stack.timeTomorrow) {
-				stack.dates[timestamp] = string;
-			// past
-			} else {
-				if (DEBUG) {
-					console.log('### Date is in the past  ['+timestamp+'] <= '+string+'');
-				}
-			}
-		}
-
-	}
-	return timestamp;
+	return false;
 }; 
 
 casbot.stack = function(site, stack, element) {

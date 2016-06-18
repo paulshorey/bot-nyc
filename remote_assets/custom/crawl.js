@@ -73,7 +73,6 @@ window.casbot.crawl = function(each) {
 				} catch(e) {
 					var elem = $(this).find(each.site.selectors.item_dates[c]);
 				}
-				console.log('### '+elem[0].innerText);
 				if (elem[0] && elem[0].innerText) {
 					// use
 					var timestamp = casbot.stackTime(stack, elem[0].innerText);
