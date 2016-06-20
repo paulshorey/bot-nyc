@@ -38,7 +38,7 @@ window.casbot.crawl = function(each) {
 	var i = 0;
 	elements.each(function() {
 	i++;
-	if (i>=10) {
+	if (i>=100) {
 		return false;
 	}
 	try {
