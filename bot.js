@@ -21,6 +21,26 @@
 	CONFIG.path_root.pop();
 	CONFIG.path_root = CONFIG.path_root.join('/');
 
+	// command line
+	if (CASPER.cli.has("port")) {
+		CONFIG.port = CASPER.cli.get("port");
+	}
+	if (CASPER.cli.has("iteration")) {
+		CONFIG.iteration = CASPER.cli.get("iteration");
+	}
+	if (CASPER.cli.has("list")) {
+		CONFIG.list = CASPER.cli.get("list"); // just list the sites, don't actually crawl them
+	}
+	if (CASPER.cli.has("test")) {
+		CONFIG.test = CASPER.cli.get("test"); // test crawl one site
+		DEBUG = true;
+	}
+	if (CASPER.cli.has("squash")) {
+		CONFIG.list = CASPER.cli.get("squash"); // enable DEBUG without changing anything else
+		DEBUG = true;
+	}
+
+	// starting
 	var CASPER = require('casper').create({
 		waitTimeout: 20000,
 		stepTimeout: 5000,
@@ -38,7 +58,7 @@
 		},
 		pageSettings: {
 			"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
-			"loadImages": true,
+			"loadImages": false,
 			"loadPlugins": false,
 			"webSecurityEnabled": false,
 			"ignoreSslErrors": true
@@ -162,25 +182,6 @@
 	}
 	CASPER.console.error = function(message) {
 		CASPER.console.write(message, 'error');
-	}
-
-	// CONFIG (amended after CASPER ready)
-	if (CASPER.cli.has("port")) {
-		CONFIG.port = CASPER.cli.get("port");
-	}
-	if (CASPER.cli.has("iteration")) {
-		CONFIG.iteration = CASPER.cli.get("iteration");
-	}
-	if (CASPER.cli.has("list")) {
-		CONFIG.list = CASPER.cli.get("list"); // just list the sites, don't actually crawl them
-	}
-	if (CASPER.cli.has("test")) {
-		CONFIG.test = CASPER.cli.get("test"); // test crawl one site
-		DEBUG = true;
-	}
-	if (CASPER.cli.has("squash")) {
-		CONFIG.list = CASPER.cli.get("squash"); // enable DEBUG without changing anything else
-		DEBUG = true;
 	}
 
 	CASPER.console.error = function(message) {
