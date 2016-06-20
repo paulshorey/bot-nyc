@@ -21,25 +21,6 @@ CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
 CONFIG.path_root.pop();
 CONFIG.path_root = CONFIG.path_root.join('/');
 
-// command line
-if (SYSTEM.args['port']) {
-	CONFIG.port = SYSTEM.args['port'];
-}
-if (SYSTEM.args['iteration']) {
-	CONFIG.iteration = SYSTEM.args['iteration'];
-}
-if (SYSTEM.args['list']) {
-	CONFIG.list = SYSTEM.args['list'];
-}
-if (SYSTEM.args['test']) {
-	CONFIG.test = SYSTEM.args['test'];
-	DEBUG = true;
-}
-if (SYSTEM.args['squash']) {
-	CONFIG.squash = SYSTEM.args['squash'];
-	DEBUG = true;
-}
-
 // starting
 var CASPER = require('casper').create({
 	waitTimeout: 20000,
@@ -88,6 +69,26 @@ var CASPER = require('casper').create({
 		CONFIG.path_root + "/remote_assets/custom/crawl.js"
 	]
 });
+
+// command line
+if (CASPER.cli.has("port")) {
+	CONFIG.port = CASPER.cli.get("port");
+}
+if (CASPER.cli.has("iteration")) {
+	CONFIG.iteration = CASPER.cli.get("iteration");
+}
+if (CASPER.cli.has("list")) {
+	CONFIG.list = CASPER.cli.get("list"); // just list the sites, don't actually crawl them
+}
+if (CASPER.cli.has("test")) {
+	CONFIG.test = CASPER.cli.get("test"); // test crawl one site
+	DEBUG = true;
+}
+if (CASPER.cli.has("squash")) {
+	CONFIG.list = CASPER.cli.get("squash"); // enable DEBUG without changing anything else
+	DEBUG = true;
+}
+
 // events
 CASPER.on("page.error", function(error, notes) {
 	if (DEBUG) {
@@ -198,8 +199,6 @@ CASPER.reportErrors = function(f) {
   return ret;
 }
 
-CASPER.console.write(JSON.stringify(SYSTEM.args),'warning');
-CASPER.exit();
 // CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 //CASPER.console.log(OS.name);
 
