@@ -281,31 +281,18 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 
 		// EACH
 		CASPER.eachThen(sites, function(response) {
+			EACH = {crawled:{}};
 			EACH.more = '';
 			EACH.waited = 0;
 			EACH.site = response.data;
 
 			// GO
-			if (!CONFIG.list && !CONFIG.test && !EACH.crawled[ EACH.site.link ]) {
-				// all - production
-				CASPER.console.log('\nOpening all... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
-				CASPER.thenOpen(EACH.site.link, function(headers) {
-					CASPER.reportErrors(function() {
-						BOT.wait();
-					});
+			CASPER.console.log('\nOpening ' + JSON.stringify(EACH.site) );
+			CASPER.thenOpen(EACH.site.link, function(headers) {
+				CASPER.reportErrors(function() {
+					BOT.wait();
 				});
-			} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test || CONFIG.squash)!=-1) {
-				// one - to test
-				CASPER.console.log('\nOpening test... ' + JSON.stringify(EACH.site) );
-				CASPER.thenOpen(EACH.site.link, function(headers) {
-					CASPER.reportErrors(function() {
-						BOT.wait();
-					});
-				});
-			} else if (CONFIG.list) {
-				// none -- list only
-				CASPER.console.log('\nOpening list... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
-			}
+			});
 
 			// CLEANUP
 			CASPER.wait(100);
