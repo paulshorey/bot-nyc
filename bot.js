@@ -223,7 +223,7 @@ BOT.wait = function(){
 			EACH.crawled = 0; // for this, allow duplicate call if didn't get results first time
 
 			// each evaluate
-			var each = CASPER.evaluate(function(each) {
+			CASPER.evaluate(function(each) {
 				if (!window.casbot) {
 					return false;
 				}
@@ -231,24 +231,22 @@ BOT.wait = function(){
 			}, EACH);
 
 			// EACH evaluated
-			if (each && each.items && each.items.length) {
-				EACH = each;
-				return true;
-			}
+			// if (each && each.items && each.items.length) {
+			// 	EACH = each;
+			// 	return true;
+			// }
 
 		}, function(data) {
 
-			// SAVE
-			// now done in client
+			// // MORE items
+			// if (EACH.selectors.more) {
+			// 	CASPER.thenClick(EACH.selectors.more, function(){
+			// 		CASPER.reportErrors(function() {
+			// 			BOT.wait();
+			// 		});
+			// 	});
+			// }
 
-			// MORE items
-			if (EACH.selectors.more) {
-				CASPER.thenClick(EACH.selectors.more, function(){
-					CASPER.reportErrors(function() {
-						BOT.wait();
-					});
-				});
-			}
 			
 		}, function(error) {
 			CASPER.console.error('Read failed: '+error+'');
@@ -310,7 +308,9 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 			}
 
 			// CLEANUP
+			CASPER.wait(100);
 			CASPER.thenOpen('about:blank');
+			CASPER.wait(100);
 		});
 
 	});
