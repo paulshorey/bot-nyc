@@ -198,6 +198,8 @@ CASPER.reportErrors = function(f) {
   return ret;
 }
 
+CASPER.console.write(JSON.stringify(SYSTEM.args),'warning');
+CASPER.exit();
 // CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 //CASPER.console.log(OS.name);
 
