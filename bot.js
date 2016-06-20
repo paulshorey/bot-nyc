@@ -26,17 +26,17 @@ if (SYSTEM.args['port']) {
 	CONFIG.port = SYSTEM.args['port'];
 }
 if (SYSTEM.args['iteration']) {
-	CONFIG.port = SYSTEM.args['iteration'];
+	CONFIG.iteration = SYSTEM.args['iteration'];
 }
 if (SYSTEM.args['list']) {
-	CONFIG.port = SYSTEM.args['list'];
+	CONFIG.list = SYSTEM.args['list'];
 }
 if (SYSTEM.args['test']) {
-	CONFIG.port = SYSTEM.args['test'];
+	CONFIG.test = SYSTEM.args['test'];
 	DEBUG = true;
 }
-if (SYSTEM.args['test']) {
-	CONFIG.port = SYSTEM.args['test'];
+if (SYSTEM.args['squash']) {
+	CONFIG.squash = SYSTEM.args['squash'];
 	DEBUG = true;
 }
 
