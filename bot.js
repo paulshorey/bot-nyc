@@ -14,9 +14,9 @@
 		"port":80,
 		"iteration":0
 	};
-	// if (OS.name=='mac') {
-	// 	CONFIG.api_host = 'http://localhost:1080';
-	// }
+	if (OS.name=='mac') {
+		CONFIG.api_host = 'http://localhost:1080';
+	}
 	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
 	CONFIG.path_root.pop();
 	CONFIG.path_root = CONFIG.path_root.join('/');
