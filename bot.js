@@ -1,204 +1,205 @@
 // UPPERCASE global scope
 // same bot.js as go.js
 
-	var DEBUG = true;
-	var SYSTEM = require('system');
-	var OS = SYSTEM.os;
-	var DT = new Date();
-	var FS = require('fs');
-	var FUN = require('./node_custom/fun.js');
+var DEBUG = true;
+var SYSTEM = require('system');
+var OS = SYSTEM.os;
+var DT = new Date();
+var FS = require('fs');
+var FUN = require('./node_custom/fun.js');
 
-	var CONFIG = {
-		"api_host": 'http://api.allevents.nyc',
-		"path_root": '',
-		"port":80,
-		"iteration":0
-	};
-	if (OS.name=='mac') {
-		CONFIG.api_host = 'http://localhost:1080';
-	}
-	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
-	CONFIG.path_root.pop();
-	CONFIG.path_root = CONFIG.path_root.join('/');
+var CONFIG = {
+	"api_host": 'http://api.allevents.nyc',
+	"path_root": '',
+	"port":80,
+	"iteration":0
+};
+if (OS.name=='mac') {
+	CONFIG.api_host = 'http://localhost:1080';
+}
+CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
+CONFIG.path_root.pop();
+CONFIG.path_root = CONFIG.path_root.join('/');
 
-	var CASPER = require('casper').create({
-		waitTimeout: 20000,
-		stepTimeout: 5000,
-		retryTimeout: 1000,
-		verbose: true,
-		logLevel: 'debug',
-		exitOnError: false,
-		log_statuses: ['warning', 'error', 'info','log','debug'],
-		viewportSize: {
-			width: 1440,
-			height: 900
-		},
-		options: {
-			exitOnError: false
-		},
-		pageSettings: {
-			"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
-			"loadImages": true,
-			"loadPlugins": false,
-			"webSecurityEnabled": false,
-			"ignoreSslErrors": true
-		},
-		onWaitTimeout: function(timeout, step) {
-			//CASPER.console.error('		onWaitTimeout: ' + step, 'error');
-			// CASPER.log('onWaitTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
-			// CASPER.clear();
-			// CASPER.page.stop();
-		},
-		onStepTimeout: function(timeout, step) {
-			//CASPER.console.error('		onStepTimeout: ' + step, 'error');
-			// CASPER.log('onStepTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
-			// CASPER.clear();
-			// CASPER.page.stop();
-		},
-		onResourceReceived: function(timeout, step) {
-			//CASPER.console.error('		onResourceReceived: ' + step, 'error');
-			//CASPER.log( 'onResourceReceived\': "' + ( site ? EACH.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
-		},
-		clientScripts: [
-			CONFIG.path_root + "/remote_assets/modified/es6.js",
-			CONFIG.path_root + "/remote_assets/modified/jquery.js",
-			CONFIG.path_root + "/remote_assets/vendor/sugar.js",
-			CONFIG.path_root + "/remote_assets/custom/uu.js",
-			CONFIG.path_root + "/remote_assets/custom/parse.js",
-			CONFIG.path_root + "/remote_assets/custom/crawl.js"
-		]
-	});
-	// events
-	CASPER.on("page.error", function(error, notes) {
-		if (DEBUG) {
-			CASPER.console.error('		Error: ' + JSON.stringify(error, null, " ") + '\n' + JSON.stringify(notes, null, " "));
-		}
-	});
-	CASPER.on('http.status.404', function(resource) {
-		if (DEBUG) {
-			CASPER.console.error('		404 error: ' + resource.url, 'error');
-		}
-	});
-	CASPER.on('http.status.500', function(resource) {
-		if (DEBUG) {
-			CASPER.console.error('		500 error: ' + resource.url, 'error');
-		}
-	});
-	CASPER.on('complete.error', function(err) {
-		CASPER.die("		Complete callback has failed: " + err);
-	});
-	CASPER.on('remote.message', function(msg, etc) {
-		// ignore site's console.logs, only show ours
-		if (msg.substr(0,3)=='###') {
-			msg = msg.substr(4);
-			CASPER.console.warn('		' + msg);
-		}
-		// ignore site's console.logs, only show ours
-		if (msg.substr(0,2)=='##') {
-			msg = msg.substr(3);
-			CASPER.console.info('		' + msg);
-		}
-		if (msg.substr(0,2)=='# ') {
-			msg = msg.substr(2);
-			CASPER.console.log('		' + msg);
-		}
-	});
-	CASPER.on('error', function(msg, backtrace) {
-		// this is a casper error, not remote
-		CASPER.console.error(msg);
-	});
-	CASPER.on('run.complete', function() {
-		//CASPER.console.warn('Test completed');
-		//CASPER.exit();
-	});
-	// CASPER.on('remote.callback', function(requestData, request) {
-	// 	request.abort(requestData);
-	// 	return false;
-	// });
-	// helpers
-	CASPER.console = {};
-	CASPER.console.html = '';
-	CASPER.console.date = '';
-	CASPER.console.write = function(message, status) {
-		// start each day
-		if (CASPER.console.date != DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate())) {
-			CASPER.console.html = '';
-			CASPER.console.date = DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate());
-		}
-		// format
-		if (typeof message == 'object') {
-			message = JSON.stringify(message, null, ' ').replace(/[\n\r\t]/g,'');
-		} else if (typeof message == 'function') {
-			message = JSON.stringify(message, null, ' ').replace(/[\n\r\t]/g,'');
-		} else if (typeof message == 'string') {
-			//message = message.trim();
-			//message = message.replace(/[\n\r\t]/g,'');
-		} else {
-			message = '('+(typeof message)+')';
-		}
-		// log
-		// to FILE
-		var action = (status=='error'||status=='info') ? status : 'log';
-		if (status=='warning') {
-			action = 'warn';
-		}
-		CASPER.console.html = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + CASPER.console.html;
-		FS.write(
-			'public/console/logs.html', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
-			CASPER.console.html,
-			'w'
-		);
-		// to CONSOLE
-		CASPER.echo(message, status.toUpperCase());
-	};
-	CASPER.console.log = function(message) {
-		CASPER.console.write(message, 'log');
-	}
-	CASPER.console.info = function(message) {
-		CASPER.console.write(message, 'info');
-	}
-	CASPER.console.warn = function(message) {
-		CASPER.console.write(message, 'warning');
-	}
-	CASPER.console.error = function(message) {
-		CASPER.console.write(message, 'error');
-	}
+// command line
+if (SYSTEM.args['port']) {
+	CONFIG.port = SYSTEM.args['port'];
+}
+if (SYSTEM.args['iteration']) {
+	CONFIG.port = SYSTEM.args['iteration'];
+}
+if (SYSTEM.args['list']) {
+	CONFIG.port = SYSTEM.args['list'];
+}
+if (SYSTEM.args['test']) {
+	CONFIG.port = SYSTEM.args['test'];
+	DEBUG = true;
+}
+if (SYSTEM.args['test']) {
+	CONFIG.port = SYSTEM.args['test'];
+	DEBUG = true;
+}
 
-	// CONFIG (amended after CASPER ready)
-	if (CASPER.cli.has("port")) {
-		CONFIG.port = CASPER.cli.get("port");
+// starting
+var CASPER = require('casper').create({
+	waitTimeout: 20000,
+	stepTimeout: 5000,
+	retryTimeout: 1000,
+	verbose: true,
+	logLevel: 'debug',
+	exitOnError: false,
+	log_statuses: ['warning', 'error', 'info','log','debug'],
+	viewportSize: {
+		width: 1440,
+		height: 900
+	},
+	options: {
+		exitOnError: false
+	},
+	pageSettings: {
+		"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
+		"loadImages": false,
+		"loadPlugins": false,
+		"webSecurityEnabled": false,
+		"ignoreSslErrors": true
+	},
+	onWaitTimeout: function(timeout, step) {
+		//CASPER.console.error('		onWaitTimeout: ' + step, 'error');
+		// CASPER.log('onWaitTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+		// CASPER.clear();
+		// CASPER.page.stop();
+	},
+	onStepTimeout: function(timeout, step) {
+		//CASPER.console.error('		onStepTimeout: ' + step, 'error');
+		// CASPER.log('onStepTimeout\': "' + (site ? EACH.site.link : '(site not defined)') + '" : ' + timeout + 'ms', "error");
+		// CASPER.clear();
+		// CASPER.page.stop();
+	},
+	onResourceReceived: function(timeout, step) {
+		//CASPER.console.error('		onResourceReceived: ' + step, 'error');
+		//CASPER.log( 'onResourceReceived\': "' + ( site ? EACH.site.link : '(site not defined)' ) + '" : ' + timeout + 'ms', "info" );
+	},
+	clientScripts: [
+		CONFIG.path_root + "/remote_assets/modified/es6.js",
+		CONFIG.path_root + "/remote_assets/modified/jquery.js",
+		CONFIG.path_root + "/remote_assets/vendor/sugar.js",
+		CONFIG.path_root + "/remote_assets/custom/uu.js",
+		CONFIG.path_root + "/remote_assets/custom/parse.js",
+		CONFIG.path_root + "/remote_assets/custom/crawl.js"
+	]
+});
+// events
+CASPER.on("page.error", function(error, notes) {
+	if (DEBUG) {
+		CASPER.console.error('		Error: ' + JSON.stringify(error, null, " ") + '\n' + JSON.stringify(notes, null, " "));
 	}
-	if (CASPER.cli.has("iteration")) {
-		CONFIG.iteration = CASPER.cli.get("iteration");
+});
+CASPER.on('http.status.404', function(resource) {
+	if (DEBUG) {
+		CASPER.console.error('		404 error: ' + resource.url, 'error');
 	}
-	if (CASPER.cli.has("list")) {
-		CONFIG.list = CASPER.cli.get("list"); // just list the sites, don't actually crawl them
+});
+CASPER.on('http.status.500', function(resource) {
+	if (DEBUG) {
+		CASPER.console.error('		500 error: ' + resource.url, 'error');
 	}
-	if (CASPER.cli.has("test")) {
-		CONFIG.test = CASPER.cli.get("test"); // test crawl one site
-		DEBUG = true;
+});
+CASPER.on('complete.error', function(err) {
+	CASPER.die("		Complete callback has failed: " + err);
+});
+CASPER.on('remote.message', function(msg, etc) {
+	// ignore site's console.logs, only show ours
+	if (msg.substr(0,3)=='###') {
+		msg = msg.substr(4);
+		CASPER.console.warn('		' + msg);
 	}
-	if (CASPER.cli.has("squash")) {
-		CONFIG.list = CASPER.cli.get("squash"); // enable DEBUG without changing anything else
-		DEBUG = true;
+	// ignore site's console.logs, only show ours
+	if (msg.substr(0,2)=='##') {
+		msg = msg.substr(3);
+		CASPER.console.info('		' + msg);
 	}
+	if (msg.substr(0,2)=='# ') {
+		msg = msg.substr(2);
+		CASPER.console.log('		' + msg);
+	}
+});
+CASPER.on('error', function(msg, backtrace) {
+	// this is a casper error, not remote
+	CASPER.console.error(msg);
+});
+CASPER.on('run.complete', function() {
+	//CASPER.console.warn('Test completed');
+	//CASPER.exit();
+});
+// CASPER.on('remote.callback', function(requestData, request) {
+// 	request.abort(requestData);
+// 	return false;
+// });
+// helpers
+CASPER.console = {};
+CASPER.console.html = '';
+CASPER.console.date = '';
+CASPER.console.write = function(message, status) {
+	// start each day
+	if (CASPER.console.date != DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate())) {
+		CASPER.console.html = '';
+		CASPER.console.date = DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate());
+	}
+	// format
+	if (typeof message == 'object') {
+		message = JSON.stringify(message, null, ' ').replace(/[\n\r\t]/g,'');
+	} else if (typeof message == 'function') {
+		message = JSON.stringify(message, null, ' ').replace(/[\n\r\t]/g,'');
+	} else if (typeof message == 'string') {
+		//message = message.trim();
+		//message = message.replace(/[\n\r\t]/g,'');
+	} else {
+		message = '('+(typeof message)+')';
+	}
+	// log
+	// to FILE
+	var action = (status=='error'||status=='info') ? status : 'log';
+	if (status=='warning') {
+		action = 'warn';
+	}
+	CASPER.console.html = '<script>console.'+action+'(\''+message.replace(/\'/g, '\\\'')+'\');</script>\n' + CASPER.console.html;
+	FS.write(
+		'public/console/logs.html', // + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds()
+		CASPER.console.html,
+		'w'
+	);
+	// to CONSOLE
+	CASPER.echo(message, status.toUpperCase());
+};
+CASPER.console.log = function(message) {
+	CASPER.console.write(message, 'log');
+}
+CASPER.console.info = function(message) {
+	CASPER.console.write(message, 'info');
+}
+CASPER.console.warn = function(message) {
+	CASPER.console.write(message, 'warning');
+}
+CASPER.console.error = function(message) {
+	CASPER.console.write(message, 'error');
+}
 
-	CASPER.console.error = function(message) {
-		CASPER.console.write(message, 'error');
-	}
-	CASPER.reportErrors = function(f) {
-	  var ret = null;
-	  try {
-	    ret = f.call(this);
-	  } catch (e) {
-	    this.echo("ERROR: " + e);
-	    this.exit();
-	  }
-	  return ret;
-	}
+CASPER.console.error = function(message) {
+	CASPER.console.write(message, 'error');
+}
+CASPER.reportErrors = function(f) {
+  var ret = null;
+  try {
+    ret = f.call(this);
+  } catch (e) {
+    this.echo("ERROR: " + e);
+    this.exit();
+  }
+  return ret;
+}
 
-	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
-	//CASPER.console.log(OS.name);
+// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
+//CASPER.console.log(OS.name);
 
 /*
 	2. CRAWL
@@ -295,6 +296,12 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 						BOT.wait();
 					});
 				});
+				CASPER.then(function(){
+					CASPER.console.info('Done working, taking a break...');
+					CASPER.wait(5000);
+					CASPER.open('about:blank');
+					CASPER.wait(1000);
+				});
 			} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test || CONFIG.squash)!=-1) {
 				// one - to test
 				CASPER.console.log('\nOpening test... ' + JSON.stringify(EACH.site) );
@@ -302,6 +309,12 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 					CASPER.reportErrors(function() {
 						BOT.wait();
 					});
+				});
+				CASPER.then(function(){
+					CASPER.console.info('Done working, taking a break...');
+					CASPER.wait(5000);
+					CASPER.open('about:blank');
+					CASPER.wait(1000);
 				});
 			} else if (CONFIG.list) {
 				// none -- list only
