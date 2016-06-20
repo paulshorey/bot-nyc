@@ -422,7 +422,7 @@ window.casbot.crawl = function(each) {
 		///////////////////////////////////////////////////////////////////
 		// assign
 		if (play.score >= 100) {
-			each.items.push(play);
+			//each.items.push(play);
 		}
 		// cleanup
 		$(this).remove();
