@@ -3,7 +3,7 @@ if (!window.casbot) {
 }
 
 window.casbot.crawl = function(each) {
-	window.DEBUG = each.DEBUG = true;
+	window.DEBUG = each.DEBUG;
 	window.CONFIG = each.CONFIG;
 
 	// clear more selector which got us here from previous page, to reset at the bottom for next thenClick
@@ -37,11 +37,8 @@ window.casbot.crawl = function(each) {
 	each.items = [];
 	var i = 0;
 	elements.each(function() {
-	i++;
-	if (i>=100) {
-		return false;
-	}
 	try {
+		i++;
 
 		///////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////
@@ -145,7 +142,7 @@ window.casbot.crawl = function(each) {
 				this.parentNode.removeChild(this);
 			});
 			// self
-			var divs_length = ($(current).get(0).innerHTML.match(/(<[TIME|P|H1|H2|H3|H4|H5|H6|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
+			var divs_length = ($(current).get(0).innerHTML.match(/(<[P|H1|H2|H3|H4|H5|H6|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
 			$(current).get(0)._children = divs_length;
 			// children
 			if (divs_length) {
@@ -401,7 +398,7 @@ window.casbot.crawl = function(each) {
 		if (!play.texts[0]) {
 			play.score = 0;
 		}
-		if (!play.texts[0] || play.texts.join().length<20) {
+		if (play.texts.join().length<20) {
 			play.score -= 1;
 		}
 		if (!play.links[0]) {
@@ -422,96 +419,92 @@ window.casbot.crawl = function(each) {
 		///////////////////////////////////////////////////////////////////
 		// assign
 		if (play.score >= 100) {
-			//each.items.push(play);
+			each.items.push(play);
 		}
 		// cleanup
 		$(this).remove();
-		keys = null;
-		stack = null;
-		play = null;
 
 	} catch(e) {
 		console.log('### '+e);
-		return false;
 	}
 	});
 
 
-	// // look through deck for jokers
-	// // text
-	// var total = each.items.length;
-	// var texts = {};
-	// for ( var event in each.items ) {
-	// 	for ( var t in each.items[event].texts ) {
-	// 		var text = each.items[event].texts[t];
-	// 		texts[text] = (texts[text]||0) + 1;
-	// 	}
-	// }
-	// for ( var text in texts ) {
-	// 	var text_count = texts[text];
-	// 	if (text_count>(total/2)) {
-	// 		for ( var event in each.items ) {
-	// 			for ( var t in each.items[event].texts ) {
-	// 				if (each.items[event].texts[t]==text) {
-	// 					each.items[event].texts.splice(t,t+1);
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// // images
-	// var total = each.items.length;
-	// var images = {};
-	// for ( var event in each.items ) {
-	// 	for ( var i in each.items[event].images ) {
-	// 		var image = each.items[event].images[i];
-	// 		images[image] = (images[image]||0) + 1;
-	// 	}
-	// }
-	// for ( var image in images ) {
-	// 	var image_count = images[image];
-	// 	if (image_count>(total/2)) {
-	// 		for ( var event in each.items ) {
-	// 			for ( var i in each.items[event].images ) {
-	// 				if (each.items[event].images[i]==image) {
-	// 					each.items[event].images.splice(i,i+1);
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+	// look through deck for jokers
+	// text
+	var total = each.items.length;
+	var texts = {};
+	for ( var event in each.items ) {
+		for ( var t in each.items[event].texts ) {
+			var text = each.items[event].texts[t];
+			texts[text] = (texts[text]||0) + 1;
+		}
+	}
+	for ( var text in texts ) {
+		var text_count = texts[text];
+		if (text_count>(total/2)) {
+			for ( var event in each.items ) {
+				for ( var t in each.items[event].texts ) {
+					if (each.items[event].texts[t]==text) {
+						each.items[event].texts.splice(t,t+1);
+					}
+				}
+			}
+		}
+	}
+	// images
+	var total = each.items.length;
+	var images = {};
+	for ( var event in each.items ) {
+		for ( var i in each.items[event].images ) {
+			var image = each.items[event].images[i];
+			images[image] = (images[image]||0) + 1;
+		}
+	}
+	for ( var image in images ) {
+		var image_count = images[image];
+		if (image_count>(total/2)) {
+			for ( var event in each.items ) {
+				for ( var i in each.items[event].images ) {
+					if (each.items[event].images[i]==image) {
+						each.items[event].images.splice(i,i+1);
+					}
+				}
+			}
+		}
+	}
 
 
-	// // more elements
-	// if (each.items.length) {
-	// 	if (each.site.selectors.more) {
-	// 		// more selector
+	// more elements
+	if (each.items.length) {
+		if (each.site.selectors.more) {
+			// more selector
 
-	// 		var more = {};
-	// 		if (each.site.selectors.item) {
-	// 			try {
-	// 				// as jquery command: $('.item')
-	// 				more = eval(each.site.selectors.more);
-	// 			} catch(e) {
-	// 				// as jquery selector: .item
-	// 				more = $(each.site.selectors.more);
-	// 			}
-	// 		} else {
-	// 			// later automate
-	// 		}
-	// 		if (more.length && !/disabled|active|selected/.test(more.get(0).outerHTML)) {
-	// 			// still has link
-	// 			more.attr('id','thenClickSelector');
-	// 			each.selectors.more = '#thenClickSelector';
-	// 		} else {
-	// 			// no more
-	// 			each.site.selectors.more = null;
-	// 		}
-	// 	} else {
-	// 		// automatic selector
-	// 		// coming soon
-	// 	}
-	// }
+			var more = {};
+			if (each.site.selectors.item) {
+				try {
+					// as jquery command: $('.item')
+					more = eval(each.site.selectors.more);
+				} catch(e) {
+					// as jquery selector: .item
+					more = $(each.site.selectors.more);
+				}
+			} else {
+				// later automate
+			}
+			if (more.length && !/disabled|active|selected/.test(more.get(0).outerHTML)) {
+				// still has link
+				more.attr('id','thenClickSelector');
+				each.selectors.more = '#thenClickSelector';
+			} else {
+				// no more
+				each.site.selectors.more = null;
+			}
+		} else {
+			// automatic selector
+			// coming soon
+		}
+	}
 	if (DEBUG) {
 		console.log('## items = '+(JSON.stringify(each.items,null,'\t')));
 	}
@@ -586,7 +579,7 @@ window.casbot.crawl = function(each) {
 		if (post.items.length) {
 			pre = '##';
 		}
-		console.log(pre+' Post '+post.items.length+' items to '+(CONFIG.api_host+'/items')+' items');
+		console.log(pre+' Post '+post.items.length+' items @ '+window.location.href);
 		if (DEBUG) {
 			console.log(pre+' '+JSON.stringify(post));
 		}
