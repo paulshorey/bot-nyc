@@ -268,7 +268,7 @@ BOT.wait = function(){
 				CASPER.console.error('Read failed: '+error+'');
 				CASPER.console.log(' ');
 			}, 
-			3333 
+			33333 
 		);
 
 	} catch(e) {
