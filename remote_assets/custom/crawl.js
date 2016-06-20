@@ -37,8 +37,11 @@ window.casbot.crawl = function(each) {
 	each.items = [];
 	var i = 0;
 	elements.each(function() {
+	i++;
+	if (i>=10) {
+		return false;
+	}
 	try {
-		i++;
 
 		///////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////
@@ -426,6 +429,7 @@ window.casbot.crawl = function(each) {
 
 	} catch(e) {
 		console.log('### '+e);
+		return false;
 	}
 	});
 
