@@ -161,7 +161,7 @@ window.casbot.crawl = function(each) {
 			// parse innerHTML
 			stack.iteration = 100;
 			$($(this).find('*').get().reverse()).each(function() {
-				stack = casbot.stack(each.site, stack, this);
+				//stack = casbot.stack(each.site, stack, this);
 
 			});
 
