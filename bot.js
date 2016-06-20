@@ -23,8 +23,8 @@
 
 	var CASPER = require('casper').create({
 		waitTimeout: 20000,
-		stepTimeout: 4000,
-		retryTimeout: 500,
+		stepTimeout: 5000,
+		retryTimeout: 1000,
 		verbose: true,
 		logLevel: 'debug',
 		exitOnError: false,
