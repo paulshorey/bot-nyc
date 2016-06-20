@@ -23,8 +23,8 @@
 
 	var CASPER = require('casper').create({
 		waitTimeout: 20000,
-		stepTimeout: 2000,
-		retryTimeout: 200,
+		stepTimeout: 4000,
+		retryTimeout: 500,
 		verbose: true,
 		logLevel: 'debug',
 		exitOnError: false,
@@ -33,10 +33,13 @@
 			width: 1440,
 			height: 900
 		},
+		options: {
+			exitOnError: false
+		},
 		pageSettings: {
 			"userAgent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.10 (KHTML, like Gecko) Chrome/23.0.1262.0 Safari/537.10',
 			"loadImages": true,
-			"loadPlugins": true,
+			"loadPlugins": false,
 			"webSecurityEnabled": false,
 			"ignoreSslErrors": true
 		},
