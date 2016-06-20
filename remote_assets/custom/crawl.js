@@ -145,7 +145,7 @@ window.casbot.crawl = function(each) {
 				this.parentNode.removeChild(this);
 			});
 			// self
-			var divs_length = ($(current).get(0).innerHTML.match(/(<[P|H1|H2|H3|H4|H5|H6|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
+			var divs_length = ($(current).get(0).innerHTML.match(/(<[TIME|P|H1|H2|H3|H4|H5|H6|DIV|SPAN|SUB|SUP|SUMMARY|PRE|NAV|DL|DT|FORM|UL|LI|A|OL|TH|TABLE|TBODY|TH|TD|BLOCKQUOTE|ARTICLE|SECTION|MAIN|FIGURE|CAPTION|LABEL|FONT|FOOTER|HEADER|FIGCAPTION]+)/gi) || [] ).length;
 			$(current).get(0)._children = divs_length;
 			// children
 			if (divs_length) {
@@ -426,6 +426,9 @@ window.casbot.crawl = function(each) {
 		}
 		// cleanup
 		$(this).remove();
+		keys = null;
+		stack = null;
+		play = null;
 
 	} catch(e) {
 		console.log('### '+e);
