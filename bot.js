@@ -43,8 +43,8 @@ if (SYSTEM.args['test']) {
 // starting
 var CASPER = require('casper').create({
 	waitTimeout: 20000,
-	stepTimeout: 5000,
-	retryTimeout: 1000,
+	stepTimeout: 2000,
+	retryTimeout: 200,
 	verbose: true,
 	logLevel: 'debug',
 	exitOnError: false,
@@ -254,7 +254,7 @@ BOT.wait = function(){
 			CASPER.console.error('Read failed: '+error+'');
 			CASPER.console.log(' ');
 		}, 
-		33333 
+		22222 
 	);
 
 };
@@ -296,12 +296,6 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 						BOT.wait();
 					});
 				});
-				CASPER.then(function(){
-					CASPER.console.info('Done working, taking a break...');
-					CASPER.wait(5000);
-					CASPER.open('about:blank');
-					CASPER.wait(1000);
-				});
 			} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test || CONFIG.squash)!=-1) {
 				// one - to test
 				CASPER.console.log('\nOpening test... ' + JSON.stringify(EACH.site) );
@@ -310,17 +304,13 @@ CASPER.thenOpen(CONFIG.api_host+'/sites', {
 						BOT.wait();
 					});
 				});
-				CASPER.then(function(){
-					CASPER.console.info('Done working, taking a break...');
-					CASPER.wait(5000);
-					CASPER.open('about:blank');
-					CASPER.wait(1000);
-				});
 			} else if (CONFIG.list) {
 				// none -- list only
 				CASPER.console.log('\nOpening list... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
 			}
 
+			// CLEANUP
+			CASPER.thenOpen('about:blank');
 		});
 
 	});
