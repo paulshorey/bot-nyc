@@ -22,9 +22,9 @@
 	CONFIG.path_root = CONFIG.path_root.join('/');
 
 	var CASPER = require('casper').create({
-		waitTimeout: 20000,
-		stepTimeout: 2000,
-		retryTimeout: 200,
+		waitTimeout: 30000,
+		stepTimeout: 3000,
+		retryTimeout: 300,
 		verbose: true,
 		exitOnError: false,
 		log_statuses: ['warning', 'error', 'info','log'],
