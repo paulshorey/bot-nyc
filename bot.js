@@ -19,9 +19,9 @@
 	CONFIG.path_root = CONFIG.path_root.join('/');
 
 	var CASPER = require('casper').create({
-		waitTimeout: 50000,
-		stepTimeout: 5000,
-		retryTimeout: 500,
+		waitTimeout: 20000,
+		stepTimeout: 2000,
+		retryTimeout: 200,
 		verbose: true,
 		exitOnError: false,
 		log_statuses: ['warning', 'error', 'info','log'],
@@ -237,7 +237,7 @@ BOT.wait = function(){
 			CASPER.console.error('Read failed: '+error+'');
 			CASPER.console.log(' ');
 		}, 
-		55555
+		22222
 	);
 
 };
@@ -252,7 +252,7 @@ CASPER.start(CONFIG.api_host+'/site', function(headers) {
 	// sites
 	try {
 		var site = JSON.parse(CASPER.getPageContent()).data[0];
-		CASPER.console.info(site.url);
+		CASPER.console.log('Get site '+site.url);
 		CASPER.console.log(site.categories[0].title);
 	} catch (e) {
 		CASPER.console.error('bad response: api /site');
