@@ -14,22 +14,19 @@
 		"port":80,
 		"iteration":0
 	};
-	if (OS.name=='mac') {
-		CONFIG.api_host = 'http://localhost:1080';
-	}
 	CONFIG.path_root = FS.absolute(require('system').args[3]).split('/');
 	CONFIG.path_root.pop();
 	CONFIG.path_root = CONFIG.path_root.join('/');
 
 	var CASPER = require('casper').create({
-		waitTimeout: 30000,
-		stepTimeout: 3000,
-		retryTimeout: 300,
+		waitTimeout: 50000,
+		stepTimeout: 5000,
+		retryTimeout: 500,
 		verbose: true,
 		exitOnError: false,
 		log_statuses: ['warning', 'error', 'info','log'],
 		viewportSize: {
-			width: 1440,
+			width: 1100,
 			height: 900
 		},
 		pageSettings: {
@@ -80,9 +77,6 @@
 			CASPER.console.error('		500 error: ' + resource.url, 'error');
 		}
 	});
-	CASPER.on('complete.error', function(err) {
-		CASPER.die("		Complete callback has failed: " + err);
-	});
 	CASPER.on('remote.message', function(msg, etc) {
 		// ignore site's console.logs, only show ours
 		if (msg.substr(0,3)=='###') {
@@ -103,9 +97,12 @@
 		// this is a casper error, not remote
 		CASPER.console.error(msg);
 	});
+	CASPER.on('complete.error', function(err) {
+		CASPER.die("	Complete callback has failed: " + err);
+	});
 	CASPER.on('run.complete', function() {
 		//CASPER.console.warn('Test completed');
-		//CASPER.exit();
+		CASPER.exit();
 	});
 	// CASPER.on('remote.callback', function(requestData, request) {
 	// 	request.abort(requestData);
@@ -178,6 +175,13 @@
 		CONFIG.list = CASPER.cli.get("squash"); // enable DEBUG without changing anything else
 		DEBUG = true;
 	}
+	if (CASPER.cli.has("live")) { // override local dev environment
+		CONFIG.live = CASPER.cli.get("live");
+	} else {
+		if (OS.name=='mac') {
+			CONFIG.api_host = 'http://localhost:1080';
+		}
+	}
 
 	// CASPER.console.info( 'Crawl #'+CONFIG.iteration +' '+ DT.getFullYear() + '.' + FUN.pad(DT.getMonth()+1) + '.' + FUN.pad(DT.getDate()) + ' ' + FUN.pad(DT.getHours()) + ':' + FUN.pad(DT.getMinutes()) + ':' + FUN.pad(DT.getSeconds()) + ':' + DT.getMilliseconds() );
 	//CASPER.console.log(OS.name);
@@ -233,7 +237,7 @@ BOT.wait = function(){
 			CASPER.console.error('Read failed: '+error+'');
 			CASPER.console.log(' ');
 		}, 
-		33333 
+		55555
 	);
 
 };
@@ -243,48 +247,28 @@ BOT.wait = function(){
 	1. START
 */
 var EACH = {crawled:{}};
-CASPER.start();
-CASPER.thenOpen(CONFIG.api_host+'/sites', {
-	method: 'get'
-}, function(headers) {
+CASPER.start(CONFIG.api_host+'/site', function(headers) {
 
 	// sites
-	var entries = JSON.parse(CASPER.getPageContent());
-	if (!entries.data) {
-		CASPER.console.error('no sites data');
+	try {
+		var site = JSON.parse(CASPER.getPageContent()).data[0];
+		CASPER.console.info(site.url);
+		CASPER.console.log(site.categories[0].title);
+	} catch (e) {
+		CASPER.console.error('bad response: api /site');
 		return false;
 	}
-	var sites = [];
-	for (var s in entries.data) {
-		sites.push(entries.data[s]);
+	if (!site) {
+		CASPER.console.error('no site data');
+		return false;
 	}
 
 	// EACH
-	CASPER.eachThen(sites, function(response) {
-		EACH.more = '';
-		EACH.waited = 0;
-		EACH.site = response.data;
-
-		// GO
-		if (!CONFIG.list && !CONFIG.test && !EACH.crawled[ EACH.site.link ]) {
-			// all - production
-			CASPER.console.log('\nOpening all...' + EACH.site.link );
-			CASPER.thenOpen(EACH.site.link, function(headers) {
-				BOT.wait();
-				CASPER.wait(1111);
-			});
-		} else if (CONFIG.test && EACH.site.link.indexOf(CONFIG.test || CONFIG.squash)!=-1) {
-			// one - to test
-			CASPER.console.log('\nOpening test... ' + JSON.stringify(EACH.site) );
-			CASPER.thenOpen(EACH.site.link, function(headers) {
-				BOT.wait();
-				CASPER.wait(1111);
-			});
-		} else if (CONFIG.list) {
-			// none -- list only
-			CASPER.console.log('\nOpening list... ' + EACH.site.categories[0].title + ' ...' + EACH.site.link );
-		}
-
+	EACH.more = '';
+	EACH.waited = 0;
+	EACH.site = site;
+	CASPER.thenOpen(EACH.site.link, function(headers) {
+		BOT.wait();
 	});
 
 
